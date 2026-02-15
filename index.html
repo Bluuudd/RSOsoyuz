@@ -605,24 +605,7 @@
                 ctx.stroke();
             }
             
-            // ПОДСВЕТКА ПРИ НАВЕДЕНИИ - жёлтая рамка вокруг текущего пикселя
-            if (mouseInside && hoverPixel.x >= 0 && hoverPixel.x < SIZE && hoverPixel.y >= 0 && hoverPixel.y < SIZE) {
-                ctx.strokeStyle = '#FFD700';
-                ctx.lineWidth = 2;
-                ctx.strokeRect(hoverPixel.x, hoverPixel.y, 1, 1);
-                
-                // Вторая рамка для контраста
-                ctx.strokeStyle = '#000000';
-                ctx.lineWidth = 0.5;
-                ctx.strokeRect(hoverPixel.x, hoverPixel.y, 1, 1);
-            }
-            
-            // Для админа дополнительная подсветка
-            if (isAdmin && mouseInside) {
-                ctx.strokeStyle = 'white';
-                ctx.lineWidth = 3;
-                ctx.strokeRect(hoverPixel.x, hoverPixel.y, 1, 1);
-            }
+            // ВЕСЬ БЛОК ПОДСВЕТКИ УДАЛЕН - теперь нет никаких обводок возле курсора
         }
         
         const userRef = database.ref('online/' + myId);
@@ -692,13 +675,13 @@
             if (x >= 0 && x < SIZE && y >= 0 && y < SIZE) {
                 hoverPixel = { x, y };
                 document.getElementById('coordsDisplay').innerHTML = `x: ${x}, y: ${y}`;
-                renderCanvas(); // Перерисовываем с подсветкой
+                renderCanvas(); // Перерисовываем без подсветки
             }
         });
         
         canvas.addEventListener('mouseleave', () => {
             mouseInside = false;
-            renderCanvas(); // Убираем подсветку
+            renderCanvas(); // Перерисовываем
         });
         
         canvas.addEventListener('click', (e) => {
@@ -854,4 +837,3 @@
     </script>
 </body>
 </html>
-
