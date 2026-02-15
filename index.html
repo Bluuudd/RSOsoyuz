@@ -122,6 +122,7 @@
             image-rendering: pixelated;
             width: 500px;
             height: 500px;
+            transition: transform 0.1s ease;
         }
         
         .coords-display {
@@ -253,6 +254,36 @@
             word-break: break-word;
             font-size: 0.9em;
             border: 1px solid #1e4d1e;
+            position: relative;
+            transition: all 0.2s;
+        }
+        
+        .message:hover .delete-message {
+            display: block;
+        }
+        
+        .delete-message {
+            display: none;
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            width: 20px;
+            height: 20px;
+            background: #ff4444;
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 18px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            border: 2px solid white;
+            z-index: 10;
+        }
+        
+        .delete-message:hover {
+            background: #cc0000;
+            transform: scale(1.1);
         }
         
         .message .nick {
@@ -272,6 +303,15 @@
             background: #fff3e0;
             border-color: #ffd700;
             font-style: italic;
+        }
+        
+        .message.system .delete-message {
+            background: #ffd700;
+            color: #1e4d1e;
+        }
+        
+        .message.system .delete-message:hover {
+            background: #edb900;
         }
         
         .chat-input-area {
@@ -337,6 +377,14 @@
             color: #ffd700;
             font-size: 1.3em;
             margin-right: 5px;
+        }
+        
+        .zoom-level {
+            background: #1e4d1e;
+            color: #ffd700;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.9em;
         }
         
         .console-panel {
@@ -486,7 +534,7 @@
                     <div class="cooldown-box">
                         <span>⏳</span> <span id="cooldownDisplay">0</span> сек
                     </div>
-                    <div>200x200 • свободное рисование</div>
+                    <div class="zoom-level" id="zoomDisplay">🔍 1.0x</div>
                 </div>
             </div>
             
@@ -497,11 +545,7 @@
                     <input type="text" id="nickname" placeholder="Твой ник" maxlength="20" value="Боец">
                 </div>
                 
-                <div class="chat-messages" id="chatMessages">
-                    <div class="message system">
-                        <span class="nick">🤖 Система:</span> Добро пожаловать в Союзный пиксель-баттл!
-                    </div>
-                </div>
+                <div class="chat-messages" id="chatMessages"></div>
                 
                 <div class="chat-input-area">
                     <input type="text" id="chatInput" placeholder="Напиши сообщение..." maxlength="100">
@@ -511,7 +555,7 @@
         </div>
         
         <div class="footer">
-            Труд крут! • День РСО • 9 цветов • общий чат
+            Труд крут! • День РСО • 9 цветов • общий чат • зум колесом
         </div>
     </div>
     
@@ -531,7 +575,7 @@
             <button class="console-send" onclick="processCommand()" disabled>⏎</button>
         </div>
         <div class="console-help">
-            delete x,y • delete x1,y1;x2,y2 • clear • help • exit
+            delete x,y • delete x1,y1;x2,y2 • delete msg ID • clear • help • exit
         </div>
     </div>
 
@@ -562,6 +606,8 @@
         const myId = Math.random().toString(36).substring(2);
         let isAdmin = false;
         let pixels = {};
+        let zoom = 1;
+        let messages = {};
         
         const canvas = document.getElementById('pixelCanvas');
         const ctx = canvas.getContext('2d');
@@ -570,6 +616,24 @@
         
         let myNick = localStorage.getItem('pixelNick') || 'Боец';
         document.getElementById('nickname').value = myNick;
+        
+        // ===== ЗУМ КОЛЁСИКОМ =====
+        container.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            
+            // Коэффициент зумирования
+            const delta = e.deltaY > 0 ? 0.9 : 1.1;
+            zoom *= delta;
+            
+            // Ограничиваем зум от 0.5 до 3
+            zoom = Math.min(Math.max(zoom, 0.5), 3);
+            
+            // Применяем зум к канвасу
+            canvas.style.transform = `scale(${zoom})`;
+            
+            // Обновляем отображение зума
+            document.getElementById('zoomDisplay').innerHTML = `🔍 ${zoom.toFixed(1)}x`;
+        });
         
         // Загрузка пикселей
         database.ref('pixels').on('value', (snapshot) => {
@@ -595,19 +659,51 @@
             document.getElementById('onlineCount').innerHTML = `👥 ${snapshot.numChildren()}`;
         });
         
-        // Чат
-        database.ref('chat').limitToLast(50).on('value', (snapshot) => {
-            const messages = document.getElementById('chatMessages');
-            messages.innerHTML = '';
+        // ===== ЧАТ С УДАЛЕНИЕМ =====
+        database.ref('chat').on('value', (snapshot) => {
+            const messagesContainer = document.getElementById('chatMessages');
+            messagesContainer.innerHTML = '';
+            messages = {};
+            
             snapshot.forEach(child => {
+                const msgId = child.key;
                 const msg = child.val();
+                messages[msgId] = msg;
+                
                 const div = document.createElement('div');
                 div.className = 'message';
-                div.innerHTML = `<span class="nick">${escapeHtml(msg.nick)}:</span> ${escapeHtml(msg.text)} <span class="time">${msg.time || ''}</span>`;
-                messages.appendChild(div);
+                if (msg.system) {
+                    div.classList.add('system');
+                }
+                
+                let messageHtml = '';
+                
+                // Кнопка удаления (только для админа)
+                if (isAdmin) {
+                    messageHtml += `<span class="delete-message" onclick="deleteMessage('${msgId}')">×</span>`;
+                }
+                
+                messageHtml += `<span class="nick">${escapeHtml(msg.nick)}:</span> ${escapeHtml(msg.text)} <span class="time">${msg.time || ''}</span>`;
+                
+                div.innerHTML = messageHtml;
+                messagesContainer.appendChild(div);
             });
-            messages.scrollTop = messages.scrollHeight;
+            
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
         });
+        
+        // Функция удаления сообщения
+        window.deleteMessage = function(messageId) {
+            if (!isAdmin) {
+                alert('Только админ может удалять сообщения');
+                return;
+            }
+            
+            if (confirm('Удалить это сообщение?')) {
+                database.ref('chat/' + messageId).remove();
+                addConsoleOutput(`✅ Сообщение ${messageId} удалено`);
+            }
+        };
         
         function sendMessage() {
             const input = document.getElementById('chatInput');
@@ -641,17 +737,19 @@
             return div.innerHTML;
         }
         
-        // Подсветка пикселя при наведении (только затемнение, без обводки)
+        // Подсветка пикселя при наведении
         canvas.addEventListener('mousemove', (e) => {
             const rect = canvas.getBoundingClientRect();
             
-            const mouseX = e.clientX - rect.left;
-            const mouseY = e.clientY - rect.top;
+            // Учитываем зум в расчётах
+            const canvasX = (e.clientX - rect.left) / zoom;
+            const canvasY = (e.clientY - rect.top) / zoom;
             
-            if (mouseX >= 0 && mouseX <= rect.width && mouseY >= 0 && mouseY <= rect.height) {
+            if (canvasX >= 0 && canvasX <= rect.width / zoom && 
+                canvasY >= 0 && canvasY <= rect.height / zoom) {
                 
-                const pixelX = Math.floor(mouseX / (rect.width / SIZE));
-                const pixelY = Math.floor(mouseY / (rect.height / SIZE));
+                const pixelX = Math.floor(canvasX / (rect.width / zoom / SIZE));
+                const pixelY = Math.floor(canvasY / (rect.height / zoom / SIZE));
                 
                 if (pixelX >= 0 && pixelX < SIZE && pixelY >= 0 && pixelY < SIZE) {
                     darkOverlay.style.display = 'block';
@@ -675,11 +773,11 @@
             
             const rect = canvas.getBoundingClientRect();
             
-            const mouseX = e.clientX - rect.left;
-            const mouseY = e.clientY - rect.top;
+            const canvasX = (e.clientX - rect.left) / zoom;
+            const canvasY = (e.clientY - rect.top) / zoom;
             
-            const x = Math.floor(mouseX / (rect.width / SIZE));
-            const y = Math.floor(mouseY / (rect.height / SIZE));
+            const x = Math.floor(canvasX / (rect.width / zoom / SIZE));
+            const y = Math.floor(canvasY / (rect.height / zoom / SIZE));
             
             if (x >= 0 && x < SIZE && y >= 0 && y < SIZE) {
                 lastPixelTime = now;
@@ -748,6 +846,32 @@
                 addConsoleOutput('✅ Доступ разрешен. Добро пожаловать, администратор!');
                 document.getElementById('consoleInput').disabled = false;
                 document.querySelector('.console-send').disabled = false;
+                
+                // Перезагружаем чат с кнопками удаления
+                database.ref('chat').once('value', (snapshot) => {
+                    const messagesContainer = document.getElementById('chatMessages');
+                    messagesContainer.innerHTML = '';
+                    
+                    snapshot.forEach(child => {
+                        const msgId = child.key;
+                        const msg = child.val();
+                        
+                        const div = document.createElement('div');
+                        div.className = 'message';
+                        if (msg.system) {
+                            div.classList.add('system');
+                        }
+                        
+                        div.innerHTML = `
+                            <span class="delete-message" onclick="deleteMessage('${msgId}')">×</span>
+                            <span class="nick">${escapeHtml(msg.nick)}:</span> 
+                            ${escapeHtml(msg.text)} 
+                            <span class="time">${msg.time || ''}</span>
+                        `;
+                        
+                        messagesContainer.appendChild(div);
+                    });
+                });
             } else {
                 addConsoleOutput('❌ Неверный пароль');
             }
@@ -774,6 +898,7 @@
             if (command === 'help') {
                 addConsoleOutput('delete x,y - удалить один пиксель');
                 addConsoleOutput('delete x1,y1;x2,y2 - удалить квадрат между точками');
+                addConsoleOutput('delete msg ID - удалить сообщение по ID');
                 addConsoleOutput('clear - очистить весь холст');
                 addConsoleOutput('exit - выйти');
                 
@@ -791,8 +916,45 @@
                 addConsoleOutput('👋 Выход');
                 hideConsole();
                 
+                // Перезагружаем чат без кнопок удаления
+                database.ref('chat').once('value', (snapshot) => {
+                    const messagesContainer = document.getElementById('chatMessages');
+                    messagesContainer.innerHTML = '';
+                    
+                    snapshot.forEach(child => {
+                        const msg = child.val();
+                        
+                        const div = document.createElement('div');
+                        div.className = 'message';
+                        if (msg.system) {
+                            div.classList.add('system');
+                        }
+                        
+                        div.innerHTML = `
+                            <span class="nick">${escapeHtml(msg.nick)}:</span> 
+                            ${escapeHtml(msg.text)} 
+                            <span class="time">${msg.time || ''}</span>
+                        `;
+                        
+                        messagesContainer.appendChild(div);
+                    });
+                });
+                
             } else if (command.startsWith('delete ')) {
                 const coordsPart = command.substring(7).trim();
+                
+                // Проверяем, может это удаление сообщения
+                if (coordsPart.startsWith('msg ')) {
+                    const msgId = coordsPart.substring(4).trim();
+                    if (messages[msgId]) {
+                        database.ref('chat/' + msgId).remove();
+                        addConsoleOutput(`✅ Сообщение ${msgId} удалено`);
+                    } else {
+                        addConsoleOutput('❌ Сообщение с таким ID не найдено');
+                    }
+                    return;
+                }
+                
                 const points = coordsPart.split(';');
                 
                 if (points.length === 1) {
@@ -822,7 +984,6 @@
                         const x2 = parseInt(match2[1]);
                         const y2 = parseInt(match2[2]);
                         
-                        // Определяем границы квадрата
                         const minX = Math.max(0, Math.min(x1, x2));
                         const maxX = Math.min(SIZE - 1, Math.max(x1, x2));
                         const minY = Math.max(0, Math.min(y1, y2));
@@ -830,7 +991,6 @@
                         
                         let deletedCount = 0;
                         
-                        // Проходим по всем пикселям в квадрате
                         for (let x = minX; x <= maxX; x++) {
                             for (let y = minY; y <= maxY; y++) {
                                 database.ref('pixels/' + x + ',' + y).remove();
@@ -856,6 +1016,17 @@
         });
         
         renderCanvas();
+        
+        // Добавляем системное сообщение
+        setTimeout(() => {
+            database.ref('chat').push({
+                nick: '🤖 Система',
+                text: 'Добро пожаловать в Союзный пиксель-баттл!',
+                time: '00:00',
+                system: true,
+                timestamp: Date.now()
+            });
+        }, 1000);
     </script>
 </body>
 </html>
