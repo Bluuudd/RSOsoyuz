@@ -100,20 +100,51 @@
             scrollbar-width: thin;
             scrollbar-color: #ffd700 #2d5a2d;
             background: #1a3a1a;
+            transition: scrollbar-color 0.3s ease;
         }
         
+        /* Стили для скроллбаров - по умолчанию скрыты */
         #canvas-container::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
+            width: 0;
+            height: 0;
+            background: transparent;
+            transition: all 0.3s ease;
+        }
+        
+        /* При наведении показываем скроллбары */
+        #canvas-container:hover::-webkit-scrollbar {
+            width: 12px;
+            height: 12px;
         }
         
         #canvas-container::-webkit-scrollbar-track {
             background: #1a3a1a;
+            border-radius: 6px;
         }
         
         #canvas-container::-webkit-scrollbar-thumb {
             background: #ffd700;
-            border-radius: 4px;
+            border-radius: 6px;
+            border: 2px solid #1a3a1a;
+        }
+        
+        #canvas-container::-webkit-scrollbar-thumb:hover {
+            background: #edb900;
+        }
+        
+        #canvas-container::-webkit-scrollbar-corner {
+            background: #1a3a1a;
+        }
+        
+        /* Для Firefox */
+        #canvas-container {
+            scrollbar-width: thin;
+            scrollbar-color: transparent transparent;
+            transition: scrollbar-color 0.3s ease;
+        }
+        
+        #canvas-container:hover {
+            scrollbar-color: #ffd700 #1a3a1a;
         }
         
         #pixelCanvas {
@@ -123,6 +154,7 @@
             width: 500px;
             height: 500px;
             transition: transform 0.1s ease;
+            transform-origin: 0 0;
         }
         
         .coords-display {
@@ -555,7 +587,7 @@
         </div>
         
         <div class="footer">
-            Труд крут! • День РСО • 9 цветов • общий чат • зум колесом
+            Труд крут! • День РСО • 9 цветов • общий чат • зум колесом • скролл при наведении
         </div>
     </div>
     
@@ -621,6 +653,10 @@
         container.addEventListener('wheel', (e) => {
             e.preventDefault();
             
+            // Сохраняем позицию скролла до зумирования
+            const scrollLeft = container.scrollLeft;
+            const scrollTop = container.scrollTop;
+            
             // Коэффициент зумирования
             const delta = e.deltaY > 0 ? 0.9 : 1.1;
             zoom *= delta;
@@ -630,6 +666,14 @@
             
             // Применяем зум к канвасу
             canvas.style.transform = `scale(${zoom})`;
+            
+            // Корректируем скролл, чтобы центр оставался примерно на том же месте
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            
+            container.scrollLeft = scrollLeft + mouseX * (delta - 1);
+            container.scrollTop = scrollTop + mouseY * (delta - 1);
             
             // Обновляем отображение зума
             document.getElementById('zoomDisplay').innerHTML = `🔍 ${zoom.toFixed(1)}x`;
@@ -741,15 +785,15 @@
         canvas.addEventListener('mousemove', (e) => {
             const rect = canvas.getBoundingClientRect();
             
-            // Учитываем зум в расчётах
-            const canvasX = (e.clientX - rect.left) / zoom;
-            const canvasY = (e.clientY - rect.top) / zoom;
+            // Учитываем зум и скролл в расчётах
+            const canvasX = (e.clientX - rect.left + container.scrollLeft) / zoom;
+            const canvasY = (e.clientY - rect.top + container.scrollTop) / zoom;
             
-            if (canvasX >= 0 && canvasX <= rect.width / zoom && 
-                canvasY >= 0 && canvasY <= rect.height / zoom) {
+            if (canvasX >= 0 && canvasX <= SIZE && 
+                canvasY >= 0 && canvasY <= SIZE) {
                 
-                const pixelX = Math.floor(canvasX / (rect.width / zoom / SIZE));
-                const pixelY = Math.floor(canvasY / (rect.height / zoom / SIZE));
+                const pixelX = Math.floor(canvasX);
+                const pixelY = Math.floor(canvasY);
                 
                 if (pixelX >= 0 && pixelX < SIZE && pixelY >= 0 && pixelY < SIZE) {
                     darkOverlay.style.display = 'block';
@@ -773,11 +817,11 @@
             
             const rect = canvas.getBoundingClientRect();
             
-            const canvasX = (e.clientX - rect.left) / zoom;
-            const canvasY = (e.clientY - rect.top) / zoom;
+            const canvasX = (e.clientX - rect.left + container.scrollLeft) / zoom;
+            const canvasY = (e.clientY - rect.top + container.scrollTop) / zoom;
             
-            const x = Math.floor(canvasX / (rect.width / zoom / SIZE));
-            const y = Math.floor(canvasY / (rect.height / zoom / SIZE));
+            const x = Math.floor(canvasX);
+            const y = Math.floor(canvasY);
             
             if (x >= 0 && x < SIZE && y >= 0 && y < SIZE) {
                 lastPixelTime = now;
@@ -1027,6 +1071,17 @@
                 timestamp: Date.now()
             });
         }, 1000);
+
+        // Добавляем подсказку о скролле
+        setTimeout(() => {
+            database.ref('chat').push({
+                nick: 'ℹ️ Подсказка',
+                text: 'При наведении на холст появляются ползунки прокрутки справа и снизу',
+                time: '00:00',
+                system: true,
+                timestamp: Date.now()
+            });
+        }, 3000);
     </script>
 </body>
 </html>
