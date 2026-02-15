@@ -435,6 +435,139 @@
             background: #2d6a2d;
         }
         
+        /* Команды */
+        .party-section {
+            margin-top: 10px;
+            background: #f0f0f0;
+            border-radius: 15px;
+            border: 2px solid #ffd700;
+            padding: 10px;
+        }
+        
+        .party-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .party-title {
+            font-weight: bold;
+            color: #1e4d1e;
+            font-size: 1.1em;
+        }
+        
+        .party-controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .party-btn {
+            background: #1e4d1e;
+            color: white;
+            border: none;
+            padding: 5px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+        
+        .party-btn:hover {
+            background: #2d6a2d;
+        }
+        
+        .party-btn.danger {
+            background: #ff4444;
+        }
+        
+        .party-btn.danger:hover {
+            background: #cc0000;
+        }
+        
+        .party-info {
+            background: white;
+            padding: 10px;
+            border-radius: 10px;
+            margin-top: 10px;
+            border: 1px solid #1e4d1e;
+        }
+        
+        .party-members {
+            max-height: 100px;
+            overflow-y: auto;
+            padding: 5px;
+        }
+        
+        .party-member {
+            padding: 3px 8px;
+            margin: 2px;
+            background: #e8f5e9;
+            border-radius: 12px;
+            display: inline-block;
+            font-size: 0.9em;
+        }
+        
+        .party-leader {
+            font-weight: bold;
+            color: #ffd700;
+            background: #1e4d1e;
+        }
+        
+        .party-password-input {
+            display: flex;
+            gap: 5px;
+            margin-top: 10px;
+        }
+        
+        .party-password-field {
+            flex: 1;
+            padding: 8px;
+            border: 2px solid #1e4d1e;
+            border-radius: 10px;
+            outline: none;
+        }
+        
+        .party-password-field:focus {
+            border-color: #ffd700;
+        }
+        
+        .color-select {
+            padding: 5px;
+            border: 2px solid #1e4d1e;
+            border-radius: 10px;
+            outline: none;
+        }
+        
+        /* Шаблон */
+        .template-btn {
+            background: #1e4d1e;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        
+        .template-btn:hover {
+            background: #2d6a2d;
+        }
+        
+        .template-btn.disabled {
+            background: #888;
+            cursor: not-allowed;
+        }
+        
+        .template-btn.disabled:hover {
+            background: #888;
+        }
+        
+        .template-upload {
+            display: none;
+        }
+        
         .console-panel {
             position: fixed;
             top: 50%;
@@ -598,7 +731,6 @@
             cursor: pointer;
         }
         
-        /* Кнопка удаления всех сообщений */
         .danger-btn {
             background: #ff4444;
             color: white;
@@ -635,6 +767,7 @@
             color: #666;
             font-size: 0.8em;
             flex-shrink: 0;
+            margin-top: 10px;
         }
         
         .red { background: #E31E24; }
@@ -690,6 +823,61 @@
                         <input type="range" min="0.3" max="3" step="0.1" value="1" class="zoom-slider" id="zoomSlider" oninput="setZoom(this.value)">
                     </div>
                 </div>
+                
+                <!-- Команды -->
+                <div class="party-section">
+                    <div class="party-header">
+                        <span class="party-title" id="partyTitle">🚩 Команда: нет</span>
+                        <div class="party-controls">
+                            <button class="party-btn" onclick="showCreateParty()">➕ Создать</button>
+                            <button class="party-btn" onclick="showJoinParty()">🔑 Войти</button>
+                            <button class="party-btn danger" onclick="leaveParty()">🚪 Выйти</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Кнопка загрузки шаблона (видна всем) -->
+                    <div style="display: flex; align-items: center; margin-top: 5px;">
+                        <button class="template-btn" id="templateBtn" onclick="uploadTemplate()">📋 Загрузить шаблон</button>
+                        <input type="file" id="templateUpload" class="template-upload" accept="image/png, image/jpeg, image/gif" onchange="handleTemplateUpload(this)">
+                        <span style="font-size: 0.8em; color: #666; margin-left: 10px;">200x200 пикселей</span>
+                    </div>
+                    
+                    <div id="partyInfo" style="display: none;" class="party-info">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span id="partyNameDisplay"></span>
+                            <span id="partyColorDisplay" style="padding: 2px 10px; border-radius: 12px;"></span>
+                        </div>
+                        <div class="party-members" id="partyMembers"></div>
+                    </div>
+                    
+                    <!-- Диалог создания команды -->
+                    <div id="createPartyDialog" style="display: none; margin-top: 10px;">
+                        <input type="text" id="partyName" class="party-password-field" placeholder="Название команды" maxlength="30">
+                        <input type="password" id="partyPassword" class="party-password-field" placeholder="Пароль" style="margin-top: 5px;">
+                        <select id="partyColor" class="color-select" style="margin-top: 5px; width: 100%;">
+                            <option value="#E31E24">🔴 Красный</option>
+                            <option value="#0039A6">🔵 Синий</option>
+                            <option value="#1E4D1E">🟢 Зелёный</option>
+                            <option value="#FFD700">🟡 Жёлтый</option>
+                            <option value="#ED7D31">🟠 Оранжевый</option>
+                            <option value="#800080">🟣 Фиолетовый</option>
+                        </select>
+                        <div style="display: flex; gap: 5px; margin-top: 5px;">
+                            <button class="party-btn" onclick="createParty()">Создать</button>
+                            <button class="party-btn" onclick="cancelPartyDialog()">Отмена</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Диалог входа в команду -->
+                    <div id="joinPartyDialog" style="display: none; margin-top: 10px;">
+                        <input type="text" id="joinPartyName" class="party-password-field" placeholder="Название команды" maxlength="30">
+                        <input type="password" id="joinPartyPassword" class="party-password-field" placeholder="Пароль" style="margin-top: 5px;">
+                        <div style="display: flex; gap: 5px; margin-top: 5px;">
+                            <button class="party-btn" onclick="joinParty()">Войти</button>
+                            <button class="party-btn" onclick="cancelJoinDialog()">Отмена</button>
+                        </div>
+                    </div>
+                </div>
             </div>
             
             <div class="chat-section">
@@ -709,7 +897,7 @@
         </div>
         
         <div class="footer">
-            Труд крут! • День РСО • 9 цветов • зум колесом и ползунками
+            Труд крут! • День РСО • 9 цветов • команды • шаблоны
         </div>
     </div>
     
@@ -737,7 +925,6 @@
                 <div class="banned-tab" onclick="switchBannedTab('words')">Слова</div>
             </div>
             
-            <!-- Запрещённые символы -->
             <div class="banned-panel active" id="bannedCharsPanel">
                 <div class="banned-input">
                     <input type="text" id="bannedCharsInput" class="banned-field" placeholder="Введи символы для запрета" maxlength="30">
@@ -746,7 +933,6 @@
                 <div class="banned-list" id="bannedCharsList"></div>
             </div>
             
-            <!-- Запрещённые слова -->
             <div class="banned-panel" id="bannedWordsPanel">
                 <div class="banned-input">
                     <input type="text" id="bannedWordsInput" class="banned-field" placeholder="Введи слово для запрета" maxlength="30">
@@ -763,7 +949,6 @@
                 <button onclick="resetBannedDefaults()" style="width: 100%; padding: 5px; background: #888; border: none; border-radius: 5px; color: white; font-weight: bold;">Сброс к стандартным</button>
             </div>
             
-            <!-- Кнопка удаления всех сообщений -->
             <button class="danger-btn" onclick="deleteAllMessages()">🗑️ УДАЛИТЬ ВСЕ СООБЩЕНИЯ</button>
         </div>
         
@@ -794,7 +979,7 @@
         const COOLDOWN = 5;
         const ADMIN_PASSWORD = "rsoadmin";
         const DEFAULT_BANNED_CHARS = "!@#$%^&*()_+={}[]|\\:;\"'<>,.?/~`";
-        const DEFAULT_BANNED_WORDS = ["мат", "плохое", "ругательство"]; // Замени на свои
+        const DEFAULT_BANNED_WORDS = ["мат", "плохое", "ругательство"];
         
         let currentColor = '#E31E24';
         let lastPixelTime = 0;
@@ -805,6 +990,12 @@
         let bannedChars = DEFAULT_BANNED_CHARS;
         let bannedWords = DEFAULT_BANNED_WORDS;
         let zoom = 1;
+        
+        // Данные команды
+        let myParty = null;
+        let partyMembers = [];
+        let partyTemplate = null;
+        let partyLeader = null;
         
         const canvas = document.getElementById('pixelCanvas');
         const ctx = canvas.getContext('2d');
@@ -861,61 +1052,293 @@
             updateBannedWordsList();
         });
         
-        function updateBannedCharsList() {
-            const listElement = document.getElementById('bannedCharsList');
-            if (!listElement) return;
+        // ===== ЗАГРУЗКА КОМАНД =====
+        const partiesRef = database.ref('parties');
+        partiesRef.on('value', (snapshot) => {
+            const parties = snapshot.val() || {};
             
-            listElement.innerHTML = '';
-            if (bannedChars.length === 0) {
-                listElement.innerHTML = '🚫 Нет запрещённых символов';
-                listElement.style.color = '#aaa';
-            } else {
-                listElement.style.color = '#ffd700';
-                bannedChars.split('').forEach(char => {
-                    const span = document.createElement('span');
-                    span.className = 'banned-list-item';
-                    let displayChar = char;
-                    if (char === ' ') displayChar = '␣';
-                    if (char === '\n') displayChar = '↵';
-                    span.textContent = displayChar;
-                    span.onclick = () => removeBannedChar(char);
-                    listElement.appendChild(span);
+            // Проверяем, в какой команде состоит текущий игрок
+            for (let partyId in parties) {
+                const party = parties[partyId];
+                if (party.members && party.members.includes(myId)) {
+                    myParty = { id: partyId, ...party };
+                    partyLeader = party.leader;
+                    break;
+                }
+            }
+            
+            updatePartyUI();
+        });
+        
+        // Загрузка шаблона команды
+        const templatesRef = database.ref('templates');
+        templatesRef.on('value', (snapshot) => {
+            partyTemplate = snapshot.val() || null;
+            renderCanvas(); // Перерисовываем с шаблоном
+        });
+        
+        function updatePartyUI() {
+            const partyInfo = document.getElementById('partyInfo');
+            const partyTitle = document.getElementById('partyTitle');
+            const templateBtn = document.getElementById('templateBtn');
+            
+            if (myParty) {
+                partyInfo.style.display = 'block';
+                document.getElementById('partyNameDisplay').innerHTML = `🚩 ${myParty.name}`;
+                document.getElementById('partyColorDisplay').innerHTML = `🎨 Цвет команды`;
+                document.getElementById('partyColorDisplay').style.backgroundColor = myParty.color;
+                document.getElementById('partyColorDisplay').style.color = '#fff';
+                
+                // Список участников
+                const membersList = document.getElementById('partyMembers');
+                membersList.innerHTML = '';
+                myParty.members.forEach(memberId => {
+                    const memberSpan = document.createElement('span');
+                    memberSpan.className = 'party-member';
+                    if (memberId === myParty.leader) {
+                        memberSpan.classList.add('party-leader');
+                        memberSpan.innerHTML = '👑 ' + memberId.substring(0, 6);
+                    } else {
+                        memberSpan.textContent = memberId.substring(0, 6);
+                    }
+                    membersList.appendChild(memberSpan);
                 });
+                
+                partyTitle.innerHTML = `🚩 Команда: ${myParty.name}`;
+                
+                // Если игрок лидер, кнопка активна, иначе неактивна
+                if (myParty.leader === myId) {
+                    templateBtn.classList.remove('disabled');
+                    templateBtn.title = 'Загрузить шаблон (вы лидер)';
+                } else {
+                    templateBtn.classList.add('disabled');
+                    templateBtn.title = 'Только лидер может загружать шаблон';
+                }
+            } else {
+                partyInfo.style.display = 'none';
+                partyTitle.innerHTML = '🚩 Команда: нет';
+                templateBtn.classList.remove('disabled');
+                templateBtn.title = '';
             }
         }
         
-        function updateBannedWordsList() {
-            const listElement = document.getElementById('bannedWordsList');
-            if (!listElement) return;
-            
-            listElement.innerHTML = '';
-            if (bannedWords.length === 0) {
-                listElement.innerHTML = '🚫 Нет запрещённых слов';
-                listElement.style.color = '#aaa';
-            } else {
-                listElement.style.color = '#ffd700';
-                bannedWords.forEach(word => {
-                    const span = document.createElement('span');
-                    span.className = 'banned-list-item';
-                    span.textContent = word;
-                    span.onclick = () => removeBannedWord(word);
-                    listElement.appendChild(span);
-                });
+        // ===== СОЗДАНИЕ КОМАНДЫ =====
+        window.showCreateParty = function() {
+            if (myParty) {
+                alert('Ты уже в команде! Сначала выйди.');
+                return;
             }
-        }
+            document.getElementById('createPartyDialog').style.display = 'block';
+        };
         
-        // ===== ПРОВЕРКА СООБЩЕНИЙ =====
+        window.cancelPartyDialog = function() {
+            document.getElementById('createPartyDialog').style.display = 'none';
+        };
+        
+        window.createParty = function() {
+            const name = document.getElementById('partyName').value.trim();
+            const password = document.getElementById('partyPassword').value.trim();
+            const color = document.getElementById('partyColor').value;
+            
+            if (!name || !password) {
+                alert('Введи название и пароль');
+                return;
+            }
+            
+            // Проверка на запрещённые символы
+            const bannedName = containsBannedContent(name);
+            if (bannedName) {
+                alert('Название содержит запрещённые символы');
+                return;
+            }
+            
+            const partyId = 'party_' + Date.now();
+            const partyData = {
+                name: name,
+                password: password,
+                color: color,
+                leader: myId,
+                members: [myId],
+                created: Date.now()
+            };
+            
+            database.ref('parties/' + partyId).set(partyData);
+            document.getElementById('createPartyDialog').style.display = 'none';
+            document.getElementById('partyName').value = '';
+            document.getElementById('partyPassword').value = '';
+        };
+        
+        // ===== ВХОД В КОМАНДУ =====
+        window.showJoinParty = function() {
+            if (myParty) {
+                alert('Ты уже в команде! Сначала выйди.');
+                return;
+            }
+            document.getElementById('joinPartyDialog').style.display = 'block';
+        };
+        
+        window.cancelJoinDialog = function() {
+            document.getElementById('joinPartyDialog').style.display = 'none';
+        };
+        
+        window.joinParty = function() {
+            const name = document.getElementById('joinPartyName').value.trim();
+            const password = document.getElementById('joinPartyPassword').value.trim();
+            
+            if (!name || !password) {
+                alert('Введи название и пароль');
+                return;
+            }
+            
+            // Ищем команду
+            partiesRef.once('value', (snapshot) => {
+                const parties = snapshot.val() || {};
+                let foundParty = null;
+                let foundPartyId = null;
+                
+                for (let id in parties) {
+                    if (parties[id].name === name && parties[id].password === password) {
+                        foundParty = parties[id];
+                        foundPartyId = id;
+                        break;
+                    }
+                }
+                
+                if (foundParty) {
+                    // Добавляем игрока
+                    const members = foundParty.members || [];
+                    if (!members.includes(myId)) {
+                        members.push(myId);
+                        database.ref('parties/' + foundPartyId + '/members').set(members);
+                    }
+                    document.getElementById('joinPartyDialog').style.display = 'none';
+                    document.getElementById('joinPartyName').value = '';
+                    document.getElementById('joinPartyPassword').value = '';
+                } else {
+                    alert('Команда не найдена или неверный пароль');
+                }
+            });
+        };
+        
+        // ===== ВЫХОД ИЗ КОМАНДЫ =====
+        window.leaveParty = function() {
+            if (!myParty) return;
+            
+            if (confirm('Выйти из команды?')) {
+                const members = myParty.members.filter(id => id !== myId);
+                
+                if (members.length === 0) {
+                    // Если никого не осталось, удаляем команду
+                    database.ref('parties/' + myParty.id).remove();
+                } else {
+                    // Обновляем список участников
+                    database.ref('parties/' + myParty.id + '/members').set(members);
+                    
+                    // Если лидер вышел, назначаем нового
+                    if (myParty.leader === myId) {
+                        database.ref('parties/' + myParty.id + '/leader').set(members[0]);
+                    }
+                }
+                
+                myParty = null;
+                updatePartyUI();
+            }
+        };
+        
+        // ===== ЗАГРУЗКА ШАБЛОНА =====
+        window.uploadTemplate = function() {
+            if (!myParty) {
+                alert('❌ Сначала нужно войти в команду!');
+                return;
+            }
+            
+            if (myParty.leader !== myId) {
+                alert('❌ Только лидер команды может загружать шаблон!');
+                return;
+            }
+            
+            document.getElementById('templateUpload').click();
+        };
+        
+        window.handleTemplateUpload = function(input) {
+            const file = input.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    // Создаём canvas для обработки изображения
+                    const tempCanvas = document.createElement('canvas');
+                    tempCanvas.width = SIZE;
+                    tempCanvas.height = SIZE;
+                    const tempCtx = tempCanvas.getContext('2d');
+                    
+                    // Рисуем изображение, растягивая до 200x200
+                    tempCtx.drawImage(img, 0, 0, SIZE, SIZE);
+                    
+                    // Получаем пиксельные данные
+                    const imageData = tempCtx.getImageData(0, 0, SIZE, SIZE);
+                    const data = imageData.data;
+                    
+                    // Создаём шаблон (просто массив цветов)
+                    const template = [];
+                    for (let y = 0; y < SIZE; y++) {
+                        for (let x = 0; x < SIZE; x++) {
+                            const i = (y * SIZE + x) * 4;
+                            const r = data[i];
+                            const g = data[i + 1];
+                            const b = data[i + 2];
+                            const a = data[i + 3];
+                            
+                            // Если пиксель не прозрачный, сохраняем цвет
+                            if (a > 0) {
+                                const color = `rgba(${r},${g},${b},0.3)`; // Полупрозрачный для шаблона
+                                template.push({x, y, color});
+                            }
+                        }
+                    }
+                    
+                    // Сохраняем шаблон в Firebase для всей команды
+                    database.ref('templates/' + myParty.id).set({
+                        leader: myParty.leader,
+                        template: template,
+                        timestamp: Date.now()
+                    });
+                    
+                    alert('✅ Шаблон загружен!');
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        };
+        
+        // Обновляем рендер с учётом шаблона
+        const originalRenderCanvas = renderCanvas;
+        renderCanvas = function() {
+            originalRenderCanvas();
+            
+            // Рисуем шаблон поверх, если есть и если игрок в команде
+            if (myParty && partyTemplate && partyTemplate.leader === myParty.leader) {
+                ctx.globalAlpha = 0.3;
+                partyTemplate.template.forEach(pixel => {
+                    ctx.fillStyle = pixel.color;
+                    ctx.fillRect(pixel.x, pixel.y, 1, 1);
+                });
+                ctx.globalAlpha = 1.0;
+            }
+        };
+        
+        // ===== ПРОВЕРКА ЗАПРЕЩЁННОГО КОНТЕНТА =====
         function containsBannedContent(text) {
             const lowerText = text.toLowerCase();
             
-            // Проверка символов
             for (let char of text) {
                 if (bannedChars.includes(char)) {
                     return { type: 'char', value: char };
                 }
             }
             
-            // Проверка слов
             for (let word of bannedWords) {
                 if (lowerText.includes(word.toLowerCase())) {
                     return { type: 'word', value: word };
@@ -938,6 +1361,16 @@
                 const [x, y] = key.split(',').map(Number);
                 ctx.fillStyle = pixels[key];
                 ctx.fillRect(x, y, 1, 1);
+            }
+            
+            // Рисуем шаблон поверх, если есть и если игрок в команде
+            if (myParty && partyTemplate && partyTemplate.leader === myParty.leader) {
+                ctx.globalAlpha = 0.3;
+                partyTemplate.template.forEach(pixel => {
+                    ctx.fillStyle = pixel.color;
+                    ctx.fillRect(pixel.x, pixel.y, 1, 1);
+                });
+                ctx.globalAlpha = 1.0;
             }
         }
         
@@ -992,7 +1425,6 @@
             }
         };
         
-        // ===== УДАЛЕНИЕ ВСЕХ СООБЩЕНИЙ =====
         window.deleteAllMessages = function() {
             if (!isAdmin) {
                 alert('Только админ может удалять сообщения');
@@ -1277,6 +1709,49 @@
                 addConsoleOutput('✅ Сброшено к стандартному набору');
             }
         };
+        
+        function updateBannedCharsList() {
+            const listElement = document.getElementById('bannedCharsList');
+            if (!listElement) return;
+            
+            listElement.innerHTML = '';
+            if (bannedChars.length === 0) {
+                listElement.innerHTML = '🚫 Нет запрещённых символов';
+                listElement.style.color = '#aaa';
+            } else {
+                listElement.style.color = '#ffd700';
+                bannedChars.split('').forEach(char => {
+                    const span = document.createElement('span');
+                    span.className = 'banned-list-item';
+                    let displayChar = char;
+                    if (char === ' ') displayChar = '␣';
+                    if (char === '\n') displayChar = '↵';
+                    span.textContent = displayChar;
+                    span.onclick = () => removeBannedChar(char);
+                    listElement.appendChild(span);
+                });
+            }
+        }
+        
+        function updateBannedWordsList() {
+            const listElement = document.getElementById('bannedWordsList');
+            if (!listElement) return;
+            
+            listElement.innerHTML = '';
+            if (bannedWords.length === 0) {
+                listElement.innerHTML = '🚫 Нет запрещённых слов';
+                listElement.style.color = '#aaa';
+            } else {
+                listElement.style.color = '#ffd700';
+                bannedWords.forEach(word => {
+                    const span = document.createElement('span');
+                    span.className = 'banned-list-item';
+                    span.textContent = word;
+                    span.onclick = () => removeBannedWord(word);
+                    listElement.appendChild(span);
+                });
+            }
+        }
         
         function processCommand() {
             if (!isAdmin) {
