@@ -122,10 +122,24 @@
             width: 500px;
             height: 500px;
             transition: transform 0.1s ease;
-            cursor: grab;
+            pointer-events: none; /* Канвас не получает события мыши */
         }
         
-        #pixelCanvas:active {
+        /* Прозрачный слой для перетаскивания и кликов */
+        .drag-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 500px;
+            height: 500px;
+            background: transparent;
+            cursor: grab;
+            z-index: 10;
+            transform-origin: 0 0;
+            transition: transform 0.1s ease;
+        }
+        
+        .drag-layer:active {
             cursor: grabbing;
         }
         
@@ -150,12 +164,14 @@
             position: absolute;
             top: 0;
             left: 0;
-            right: 0;
-            bottom: 0;
+            width: 500px;
+            height: 500px;
             background: rgba(0, 0, 0, 0.5);
             pointer-events: none;
-            z-index: 50;
+            z-index: 20;
             display: none;
+            transform-origin: 0 0;
+            transition: transform 0.1s ease;
         }
         
         .color-panel {
@@ -521,8 +537,9 @@
                 <div class="canvas-wrapper">
                     <div id="canvas-container">
                         <canvas id="pixelCanvas" width="200" height="200"></canvas>
+                        <div class="drag-layer" id="dragLayer"></div>
+                        <div class="dark-overlay" id="darkOverlay"></div>
                     </div>
-                    <div class="dark-overlay" id="darkOverlay"></div>
                     <div class="coords-display" id="coordsDisplay">x: 0, y: 0</div>
                 </div>
                 
@@ -626,24 +643,25 @@
         const canvas = document.getElementById('pixelCanvas');
         const ctx = canvas.getContext('2d');
         const container = document.getElementById('canvas-container');
+        const dragLayer = document.getElementById('dragLayer');
         const darkOverlay = document.getElementById('darkOverlay');
         
         let myNick = localStorage.getItem('pixelNick') || 'Боец';
         document.getElementById('nickname').value = myNick;
         
-        // ===== ПЕРЕТАСКИВАНИЕ МЫШКОЙ (исправлено) =====
+        // ===== ПЕРЕТАСКИВАНИЕ ЧЕРЕЗ DRAG LAYER =====
         let isDragging = false;
         let startX, startY;
         let scrollLeft, scrollTop;
         
-        canvas.addEventListener('mousedown', (e) => {
+        dragLayer.addEventListener('mousedown', (e) => {
             isDragging = true;
-            canvas.style.cursor = 'grabbing';
+            dragLayer.style.cursor = 'grabbing';
             startX = e.pageX - container.offsetLeft;
             startY = e.pageY - container.offsetTop;
             scrollLeft = container.scrollLeft;
             scrollTop = container.scrollTop;
-            e.preventDefault(); // Предотвращаем выделение
+            e.preventDefault();
         });
         
         document.addEventListener('mousemove', (e) => {
@@ -662,15 +680,82 @@
         
         document.addEventListener('mouseup', () => {
             isDragging = false;
-            canvas.style.cursor = 'grab';
+            dragLayer.style.cursor = 'grab';
         });
         
-        canvas.addEventListener('mouseleave', () => {
+        dragLayer.addEventListener('mouseleave', () => {
             isDragging = false;
-            canvas.style.cursor = 'grab';
+            dragLayer.style.cursor = 'grab';
         });
         
-        // ===== ЗУМ КОЛЁСИКОМ =====
+        // ===== КЛИК ПО DRAG LAYER =====
+        dragLayer.addEventListener('click', (e) => {
+            if (isDragging) return;
+            
+            const now = Date.now() / 1000;
+            if (now - lastPixelTime < COOLDOWN) {
+                const wait = Math.ceil(COOLDOWN - (now - lastPixelTime));
+                alert(`⏳ Подожди ${wait} секунд`);
+                return;
+            }
+            
+            const rect = canvas.getBoundingClientRect();
+            const layerRect = dragLayer.getBoundingClientRect();
+            
+            // Координаты клика относительно dragLayer с учётом зума
+            const layerX = (e.clientX - layerRect.left) / zoom;
+            const layerY = (e.clientY - layerRect.top) / zoom;
+            
+            const x = Math.floor(layerX / (layerRect.width / zoom / SIZE));
+            const y = Math.floor(layerY / (layerRect.height / zoom / SIZE));
+            
+            if (x >= 0 && x < SIZE && y >= 0 && y < SIZE) {
+                lastPixelTime = now;
+                
+                database.ref('pixels/' + x + ',' + y).set(currentColor);
+                database.ref('history/' + Date.now()).set({
+                    x, y, color: currentColor, userId: myId, timestamp: now
+                });
+                
+                startCooldown();
+            }
+        });
+        
+        // ===== ПОДСВЕТКА ПРИ НАВЕДЕНИИ =====
+        dragLayer.addEventListener('mousemove', (e) => {
+            if (isDragging) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const layerRect = dragLayer.getBoundingClientRect();
+            
+            const layerX = (e.clientX - layerRect.left) / zoom;
+            const layerY = (e.clientY - layerRect.top) / zoom;
+            
+            if (layerX >= 0 && layerX <= layerRect.width / zoom && 
+                layerY >= 0 && layerY <= layerRect.height / zoom) {
+                
+                const pixelX = Math.floor(layerX / (layerRect.width / zoom / SIZE));
+                const pixelY = Math.floor(layerY / (layerRect.height / zoom / SIZE));
+                
+                if (pixelX >= 0 && pixelX < SIZE && pixelY >= 0 && pixelY < SIZE) {
+                    darkOverlay.style.display = 'block';
+                    
+                    // Позиционируем затемнение
+                    darkOverlay.style.transform = `scale(${zoom})`;
+                    darkOverlay.style.left = '0';
+                    darkOverlay.style.top = '0';
+                    
+                    document.getElementById('coordsDisplay').innerHTML = `x: ${pixelX}, y: ${pixelY}`;
+                }
+            }
+        });
+        
+        dragLayer.addEventListener('mouseleave', () => {
+            darkOverlay.style.display = 'none';
+            document.getElementById('coordsDisplay').innerHTML = 'x: 0, y: 0';
+        });
+        
+        // ===== ЗУМ (применяем к слоям) =====
         container.addEventListener('wheel', (e) => {
             e.preventDefault();
             
@@ -678,7 +763,11 @@
             zoom *= delta;
             zoom = Math.min(Math.max(zoom, 0.5), 3);
             
+            // Применяем зум ко всем слоям
             canvas.style.transform = `scale(${zoom})`;
+            dragLayer.style.transform = `scale(${zoom})`;
+            darkOverlay.style.transform = `scale(${zoom})`;
+            
             document.getElementById('zoomDisplay').innerHTML = `🔍 ${zoom.toFixed(1)}x`;
         });
         
@@ -706,7 +795,7 @@
             document.getElementById('onlineCount').innerHTML = `👥 ${snapshot.numChildren()}`;
         });
         
-        // ===== ЧАТ С УДАЛЕНИЕМ =====
+        // ===== ЧАТ =====
         database.ref('chat').on('value', (snapshot) => {
             const messagesContainer = document.getElementById('chatMessages');
             messagesContainer.innerHTML = '';
@@ -782,71 +871,6 @@
             return div.innerHTML;
         }
         
-        // Подсветка пикселя при наведении
-        canvas.addEventListener('mousemove', (e) => {
-            if (isDragging) return; // Не подсвечиваем при перетаскивании
-            
-            const rect = canvas.getBoundingClientRect();
-            
-            const canvasX = (e.clientX - rect.left) / zoom;
-            const canvasY = (e.clientY - rect.top) / zoom;
-            
-            if (canvasX >= 0 && canvasX <= rect.width / zoom && 
-                canvasY >= 0 && canvasY <= rect.height / zoom) {
-                
-                const pixelX = Math.floor(canvasX / (rect.width / zoom / SIZE));
-                const pixelY = Math.floor(canvasY / (rect.height / zoom / SIZE));
-                
-                if (pixelX >= 0 && pixelX < SIZE && pixelY >= 0 && pixelY < SIZE) {
-                    darkOverlay.style.display = 'block';
-                    document.getElementById('coordsDisplay').innerHTML = `x: ${pixelX}, y: ${pixelY}`;
-                }
-            }
-        });
-        
-        canvas.addEventListener('mouseleave', () => {
-            darkOverlay.style.display = 'none';
-            document.getElementById('coordsDisplay').innerHTML = 'x: 0, y: 0';
-        });
-        
-        canvas.addEventListener('click', (e) => {
-            if (isDragging) return; // Не ставим пиксель если просто тащили
-            
-            const now = Date.now() / 1000;
-            if (now - lastPixelTime < COOLDOWN) {
-                const wait = Math.ceil(COOLDOWN - (now - lastPixelTime));
-                alert(`⏳ Подожди ${wait} секунд`);
-                return;
-            }
-            
-            const rect = canvas.getBoundingClientRect();
-            
-            const canvasX = (e.clientX - rect.left) / zoom;
-            const canvasY = (e.clientY - rect.top) / zoom;
-            
-            const x = Math.floor(canvasX / (rect.width / zoom / SIZE));
-            const y = Math.floor(canvasY / (rect.height / zoom / SIZE));
-            
-            if (x >= 0 && x < SIZE && y >= 0 && y < SIZE) {
-                lastPixelTime = now;
-                
-                database.ref('pixels/' + x + ',' + y).set(currentColor);
-                database.ref('history/' + Date.now()).set({
-                    x, y, color: currentColor, userId: myId, timestamp: now
-                });
-                
-                startCooldown();
-            }
-        });
-        
-        document.querySelectorAll('.color-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('selected'));
-                btn.classList.add('selected');
-                currentColor = btn.dataset.color;
-            });
-        });
-        
         function startCooldown() {
             const display = document.getElementById('cooldownDisplay');
             let timeLeft = COOLDOWN;
@@ -860,6 +884,14 @@
                 }
             }, 1000);
         }
+        
+        document.querySelectorAll('.color-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                currentColor = btn.dataset.color;
+            });
+        });
         
         document.addEventListener('keydown', (e) => {
             if (e.key === 'ъ' || e.key === 'Ъ' || e.code === 'Backquote' || e.key === '`') {
@@ -895,6 +927,7 @@
                 document.getElementById('consoleInput').disabled = false;
                 document.querySelector('.console-send').disabled = false;
                 
+                // Обновляем чат с кнопками удаления
                 database.ref('chat').once('value', (snapshot) => {
                     const messagesContainer = document.getElementById('chatMessages');
                     messagesContainer.innerHTML = '';
@@ -970,6 +1003,7 @@
                 addConsoleOutput('👋 Выход');
                 hideConsole();
                 
+                // Убираем кнопки удаления из чата
                 database.ref('chat').once('value', (snapshot) => {
                     const messagesContainer = document.getElementById('chatMessages');
                     messagesContainer.innerHTML = '';
