@@ -88,12 +88,7 @@
             border: 3px solid #ffd700;
             overflow: hidden;
             position: relative;
-            cursor: grab;
             min-height: 0;
-        }
-        
-        .canvas-wrapper:active {
-            cursor: grabbing;
         }
         
         #canvas-container {
@@ -127,6 +122,11 @@
             width: 500px;
             height: 500px;
             transition: transform 0.1s ease;
+            cursor: grab;
+        }
+        
+        #pixelCanvas:active {
+            cursor: grabbing;
         }
         
         .coords-display {
@@ -547,7 +547,7 @@
                     </div>
                     <div style="display: flex; align-items: center;">
                         <span class="zoom-level" id="zoomDisplay">🔍 1.0x</span>
-                        <span class="drag-instruction">✋ тяни мышкой</span>
+                        <span class="drag-instruction">✋ зажми и тяни</span>
                     </div>
                 </div>
             </div>
@@ -569,7 +569,7 @@
         </div>
         
         <div class="footer">
-            Труд крут! • День РСО • 9 цветов • зум колесом • тяни мышкой
+            Труд крут! • День РСО • 9 цветов • зум колесом • зажми и тяни
         </div>
     </div>
     
@@ -589,7 +589,7 @@
             <button class="console-send" onclick="processCommand()" disabled>⏎</button>
         </div>
         <div class="console-help">
-            delete x,y • delete x1,y1;x2,y2 • delete msg ID • clear • help • exit
+            delete x,y • delete x1,y1;x2,y2 • delete msg ID • messages • clear • help • exit
         </div>
     </div>
 
@@ -631,42 +631,43 @@
         let myNick = localStorage.getItem('pixelNick') || 'Боец';
         document.getElementById('nickname').value = myNick;
         
-        // ===== ПЕРЕТАСКИВАНИЕ МЫШКОЙ =====
+        // ===== ПЕРЕТАСКИВАНИЕ МЫШКОЙ (исправлено) =====
         let isDragging = false;
         let startX, startY;
         let scrollLeft, scrollTop;
         
-        container.addEventListener('mousedown', (e) => {
+        canvas.addEventListener('mousedown', (e) => {
             isDragging = true;
-            container.style.cursor = 'grabbing';
+            canvas.style.cursor = 'grabbing';
             startX = e.pageX - container.offsetLeft;
             startY = e.pageY - container.offsetTop;
             scrollLeft = container.scrollLeft;
             scrollTop = container.scrollTop;
+            e.preventDefault(); // Предотвращаем выделение
         });
         
-        container.addEventListener('mouseleave', () => {
-            isDragging = false;
-            container.style.cursor = 'grab';
-        });
-        
-        container.addEventListener('mouseup', () => {
-            isDragging = false;
-            container.style.cursor = 'grab';
-        });
-        
-        container.addEventListener('mousemove', (e) => {
+        document.addEventListener('mousemove', (e) => {
             if (!isDragging) return;
             e.preventDefault();
             
             const x = e.pageX - container.offsetLeft;
             const y = e.pageY - container.offsetTop;
             
-            const walkX = (x - startX) * 2;
-            const walkY = (y - startY) * 2;
+            const walkX = (x - startX) * 1.5;
+            const walkY = (y - startY) * 1.5;
             
             container.scrollLeft = scrollLeft - walkX;
             container.scrollTop = scrollTop - walkY;
+        });
+        
+        document.addEventListener('mouseup', () => {
+            isDragging = false;
+            canvas.style.cursor = 'grab';
+        });
+        
+        canvas.addEventListener('mouseleave', () => {
+            isDragging = false;
+            canvas.style.cursor = 'grab';
         });
         
         // ===== ЗУМ КОЛЁСИКОМ =====
@@ -783,6 +784,8 @@
         
         // Подсветка пикселя при наведении
         canvas.addEventListener('mousemove', (e) => {
+            if (isDragging) return; // Не подсвечиваем при перетаскивании
+            
             const rect = canvas.getBoundingClientRect();
             
             const canvasX = (e.clientX - rect.left) / zoom;
@@ -807,6 +810,8 @@
         });
         
         canvas.addEventListener('click', (e) => {
+            if (isDragging) return; // Не ставим пиксель если просто тащили
+            
             const now = Date.now() / 1000;
             if (now - lastPixelTime < COOLDOWN) {
                 const wait = Math.ceil(COOLDOWN - (now - lastPixelTime));
@@ -941,8 +946,15 @@
                 addConsoleOutput('delete x,y - удалить один пиксель');
                 addConsoleOutput('delete x1,y1;x2,y2 - удалить квадрат');
                 addConsoleOutput('delete msg ID - удалить сообщение');
+                addConsoleOutput('messages - показать все ID сообщений');
                 addConsoleOutput('clear - очистить весь холст');
                 addConsoleOutput('exit - выйти');
+                
+            } else if (command === 'messages') {
+                addConsoleOutput('📨 ID сообщений:');
+                for (let id in messages) {
+                    addConsoleOutput(`  ${id}: ${messages[id].nick} - ${messages[id].text}`);
+                }
                 
             } else if (command === 'clear') {
                 if (confirm('Точно очистить ВЕСЬ холст?')) {
@@ -1024,43 +1036,4 @@
                         
                         const minX = Math.max(0, Math.min(x1, x2));
                         const maxX = Math.min(SIZE - 1, Math.max(x1, x2));
-                        const minY = Math.max(0, Math.min(y1, y2));
-                        const maxY = Math.min(SIZE - 1, Math.max(y1, y2));
-                        
-                        let deletedCount = 0;
-                        
-                        for (let x = minX; x <= maxX; x++) {
-                            for (let y = minY; y <= maxY; y++) {
-                                database.ref('pixels/' + x + ',' + y).remove();
-                                deletedCount++;
-                            }
-                        }
-                        
-                        addConsoleOutput(`✅ Удалено пикселей: ${deletedCount}`);
-                    } else {
-                        addConsoleOutput('❌ Неправильный формат');
-                    }
-                }
-            } else if (command) {
-                addConsoleOutput('❌ Неизвестная команда');
-            }
-        }
-        
-        document.getElementById('consoleInput').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') processCommand();
-        });
-        
-        renderCanvas();
-        
-        setTimeout(() => {
-            database.ref('chat').push({
-                nick: '🤖 Система',
-                text: 'Добро пожаловать в Союзный пиксель-баттл!',
-                time: '00:00',
-                system: true,
-                timestamp: Date.now()
-            });
-        }, 1000);
-    </script>
-</body>
-</html>
+                        const minY = Math.max(0, Math.min(y1
