@@ -88,7 +88,7 @@
             border: 3px solid #ffd700;
             overflow: hidden;
             position: relative;
-            cursor: none;
+            cursor: crosshair;
             min-height: 0;
         }
         
@@ -153,78 +153,15 @@
             display: none;
         }
         
-        /* КУРСОР - ПРИЦЕЛ */
-        .pixel-cursor {
+        /* Подсветка пикселя */
+        .pixel-highlight {
             position: absolute;
-            width: 30px;
-            height: 30px;
-            pointer-events: none;
-            z-index: 200;
-            display: none;
-            transform: translate(-50%, -50%);
-        }
-        
-        .cursor-line-horizontal {
-            position: absolute;
-            top: 50%;
-            left: 0;
-            width: 100%;
-            height: 2px;
-            background: #FFD700;
-            transform: translateY(-50%);
-            box-shadow: 0 0 10px gold;
-        }
-        
-        .cursor-line-vertical {
-            position: absolute;
-            top: 0;
-            left: 50%;
-            width: 2px;
-            height: 100%;
-            background: #FFD700;
-            transform: translateX(-50%);
-            box-shadow: 0 0 10px gold;
-        }
-        
-        .cursor-circle {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 10px;
-            height: 10px;
             border: 2px solid #FFD700;
-            border-radius: 50%;
-            background: rgba(255, 215, 0, 0.3);
+            background: rgba(255, 215, 0, 0.2);
+            pointer-events: none;
+            z-index: 100;
+            display: none;
             box-shadow: 0 0 20px gold;
-            animation: pulse 1s infinite;
-        }
-        
-        .cursor-dot {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 4px;
-            height: 4px;
-            background: #FFD700;
-            border-radius: 50%;
-            box-shadow: 0 0 10px gold;
-        }
-        
-        @keyframes pulse {
-            0% {
-                transform: translate(-50%, -50%) scale(1);
-                opacity: 1;
-            }
-            50% {
-                transform: translate(-50%, -50%) scale(1.3);
-                opacity: 0.7;
-            }
-            100% {
-                transform: translate(-50%, -50%) scale(1);
-                opacity: 1;
-            }
         }
         
         .color-panel {
@@ -538,12 +475,7 @@
                         <canvas id="pixelCanvas" width="200" height="200"></canvas>
                     </div>
                     <div class="dark-overlay" id="darkOverlay"></div>
-                    <div class="pixel-cursor" id="pixelCursor">
-                        <div class="cursor-line-horizontal"></div>
-                        <div class="cursor-line-vertical"></div>
-                        <div class="cursor-circle"></div>
-                        <div class="cursor-dot"></div>
-                    </div>
+                    <div class="pixel-highlight" id="pixelHighlight"></div>
                     <div class="coords-display" id="coordsDisplay">x: 0, y: 0</div>
                 </div>
                 
@@ -566,7 +498,7 @@
                     <div class="cooldown-box">
                         <span>⏳</span> <span id="cooldownDisplay">0</span> сек
                     </div>
-                    <div>200x200 • прицел в центре</div>
+                    <div>200x200 • наведи на пиксель</div>
                 </div>
             </div>
             
@@ -647,7 +579,7 @@
         const ctx = canvas.getContext('2d');
         const container = document.getElementById('canvas-container');
         const darkOverlay = document.getElementById('darkOverlay');
-        const pixelCursor = document.getElementById('pixelCursor');
+        const pixelHighlight = document.getElementById('pixelHighlight');
         
         let myNick = localStorage.getItem('pixelNick') || 'Боец';
         document.getElementById('nickname').value = myNick;
@@ -722,35 +654,33 @@
             return div.innerHTML;
         }
         
-        // ===== ПРОСТОЕ И ПОНЯТНОЕ ПОЗИЦИОНИРОВАНИЕ =====
+        // Подсветка пикселя при наведении
         canvas.addEventListener('mousemove', (e) => {
-            // Получаем координаты мыши относительно окна
-            const mouseX = e.clientX;
-            const mouseY = e.clientY;
-            
-            // Получаем позицию канваса на странице
             const rect = canvas.getBoundingClientRect();
+            const containerRect = container.getBoundingClientRect();
             
-            // Проверяем, что мышь внутри канваса
-            if (mouseX >= rect.left && mouseX <= rect.right && 
-                mouseY >= rect.top && mouseY <= rect.bottom) {
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            
+            if (mouseX >= 0 && mouseX <= rect.width && mouseY >= 0 && mouseY <= rect.height) {
                 
-                // Показываем затемнение и курсор
-                darkOverlay.style.display = 'block';
-                pixelCursor.style.display = 'block';
-                
-                // Устанавливаем курсор прямо под мышь
-                pixelCursor.style.left = mouseX + 'px';
-                pixelCursor.style.top = mouseY + 'px';
-                
-                // Вычисляем координаты пикселя (для отображения в углу)
-                const canvasX = mouseX - rect.left;
-                const canvasY = mouseY - rect.top;
-                
-                const pixelX = Math.floor(canvasX / (rect.width / SIZE));
-                const pixelY = Math.floor(canvasY / (rect.height / SIZE));
+                const pixelX = Math.floor(mouseX / (rect.width / SIZE));
+                const pixelY = Math.floor(mouseY / (rect.height / SIZE));
                 
                 if (pixelX >= 0 && pixelX < SIZE && pixelY >= 0 && pixelY < SIZE) {
+                    
+                    darkOverlay.style.display = 'block';
+                    pixelHighlight.style.display = 'block';
+                    
+                    const pixelSize = rect.width / SIZE;
+                    const left = rect.left + (pixelX * pixelSize) - containerRect.left + container.scrollLeft;
+                    const top = rect.top + (pixelY * pixelSize) - containerRect.top + container.scrollTop;
+                    
+                    pixelHighlight.style.left = left + 'px';
+                    pixelHighlight.style.top = top + 'px';
+                    pixelHighlight.style.width = pixelSize + 'px';
+                    pixelHighlight.style.height = pixelSize + 'px';
+                    
                     document.getElementById('coordsDisplay').innerHTML = `x: ${pixelX}, y: ${pixelY}`;
                 }
             }
@@ -758,7 +688,7 @@
         
         canvas.addEventListener('mouseleave', () => {
             darkOverlay.style.display = 'none';
-            pixelCursor.style.display = 'none';
+            pixelHighlight.style.display = 'none';
             document.getElementById('coordsDisplay').innerHTML = 'x: 0, y: 0';
         });
         
@@ -772,11 +702,11 @@
             
             const rect = canvas.getBoundingClientRect();
             
-            const canvasX = e.clientX - rect.left;
-            const canvasY = e.clientY - rect.top;
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
             
-            const x = Math.floor(canvasX / (rect.width / SIZE));
-            const y = Math.floor(canvasY / (rect.height / SIZE));
+            const x = Math.floor(mouseX / (rect.width / SIZE));
+            const y = Math.floor(mouseY / (rect.height / SIZE));
             
             if (x >= 0 && x < SIZE && y >= 0 && y < SIZE) {
                 lastPixelTime = now;
