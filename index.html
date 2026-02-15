@@ -435,186 +435,6 @@
             background: #2d6a2d;
         }
         
-        /* Команды */
-        .party-section {
-            margin-top: 10px;
-            background: #f0f0f0;
-            border-radius: 15px;
-            border: 2px solid #ffd700;
-            padding: 10px;
-        }
-        
-        .party-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-        
-        .party-title {
-            font-weight: bold;
-            color: #1e4d1e;
-            font-size: 1.1em;
-        }
-        
-        .party-controls {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-        
-        .party-btn {
-            background: #1e4d1e;
-            color: white;
-            border: none;
-            padding: 5px 15px;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 0.9em;
-        }
-        
-        .party-btn:hover {
-            background: #2d6a2d;
-        }
-        
-        .party-btn.danger {
-            background: #ff4444;
-        }
-        
-        .party-btn.danger:hover {
-            background: #cc0000;
-        }
-        
-        .party-info {
-            background: white;
-            padding: 10px;
-            border-radius: 10px;
-            margin-top: 10px;
-            border: 1px solid #1e4d1e;
-        }
-        
-        .party-members {
-            max-height: 100px;
-            overflow-y: auto;
-            padding: 5px;
-        }
-        
-        .party-member {
-            padding: 3px 8px;
-            margin: 2px;
-            background: #e8f5e9;
-            border-radius: 12px;
-            display: inline-block;
-            font-size: 0.9em;
-        }
-        
-        .party-leader {
-            font-weight: bold;
-            color: #ffd700;
-            background: #1e4d1e;
-        }
-        
-        .party-password-input {
-            display: flex;
-            gap: 5px;
-            margin-top: 10px;
-        }
-        
-        .party-password-field {
-            flex: 1;
-            padding: 8px;
-            border: 2px solid #1e4d1e;
-            border-radius: 10px;
-            outline: none;
-        }
-        
-        .party-password-field:focus {
-            border-color: #ffd700;
-        }
-        
-        .color-select {
-            padding: 5px;
-            border: 2px solid #1e4d1e;
-            border-radius: 10px;
-            outline: none;
-        }
-        
-        /* Шаблон */
-        .template-controls {
-            display: flex;
-            gap: 5px;
-            margin-top: 10px;
-            flex-wrap: wrap;
-        }
-        
-        .template-btn {
-            background: #1e4d1e;
-            color: white;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 20px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-        
-        .template-btn:hover {
-            background: #2d6a2d;
-        }
-        
-        .template-btn.disabled {
-            background: #888;
-            cursor: not-allowed;
-        }
-        
-        .template-btn.disabled:hover {
-            background: #888;
-        }
-        
-        .template-btn.active {
-            background: #ffd700;
-            color: #1e4d1e;
-        }
-        
-        .template-upload {
-            display: none;
-        }
-        
-        .template-transform-panel {
-            background: #f0f0f0;
-            border-radius: 10px;
-            padding: 8px;
-            margin-top: 5px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 5px;
-            align-items: center;
-        }
-        
-        .transform-slider {
-            width: 80px;
-            height: 4px;
-            background: #1e4d1e;
-            border-radius: 2px;
-            -webkit-appearance: none;
-        }
-        
-        .transform-slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 12px;
-            height: 12px;
-            background: #ffd700;
-            border-radius: 50%;
-            cursor: pointer;
-        }
-        
-        .transform-input {
-            width: 50px;
-            padding: 3px;
-            border: 1px solid #1e4d1e;
-            border-radius: 5px;
-            text-align: center;
-        }
-        
         .console-panel {
             position: fixed;
             top: 50%;
@@ -778,6 +598,7 @@
             cursor: pointer;
         }
         
+        /* Кнопка удаления всех сообщений */
         .danger-btn {
             background: #ff4444;
             color: white;
@@ -814,7 +635,6 @@
             color: #666;
             font-size: 0.8em;
             flex-shrink: 0;
-            margin-top: 10px;
         }
         
         .red { background: #E31E24; }
@@ -870,82 +690,6 @@
                         <input type="range" min="0.3" max="3" step="0.1" value="1" class="zoom-slider" id="zoomSlider" oninput="setZoom(this.value)">
                     </div>
                 </div>
-                
-                <!-- Команды -->
-                <div class="party-section">
-                    <div class="party-header">
-                        <span class="party-title" id="partyTitle">🚩 Команда: нет</span>
-                        <div class="party-controls">
-                            <button class="party-btn" onclick="showCreateParty()">➕ Создать</button>
-                            <button class="party-btn" onclick="showJoinParty()">🔑 Войти</button>
-                            <button class="party-btn danger" onclick="leaveParty()">🚪 Выйти</button>
-                        </div>
-                    </div>
-                    
-                    <!-- Кнопки загрузки и редактирования шаблона -->
-                    <div class="template-controls">
-                        <button class="template-btn" id="templateBtn" onclick="uploadTemplate()">📋 Загрузить шаблон</button>
-                        <button class="template-btn" id="editTemplateBtn" onclick="toggleEditMode()" style="display: none;">✏️ Редактировать</button>
-                        <button class="template-btn" id="applyTemplateBtn" onclick="applyTemplate()" style="display: none;">✅ Применить</button>
-                        <input type="file" id="templateUpload" class="template-upload" accept="image/*" onchange="handleTemplateUpload(this)">
-                    </div>
-                    
-                    <!-- Панель трансформации шаблона -->
-                    <div id="transformPanel" class="template-transform-panel" style="display: none;">
-                        <span>📐</span>
-                        <span>X:</span>
-                        <input type="range" id="posX" class="transform-slider" min="-100" max="100" value="0" step="1" oninput="updateTemplateTransform()">
-                        <input type="number" id="posXVal" class="transform-input" value="0" onchange="updateTemplateFromInput()">
-                        
-                        <span>Y:</span>
-                        <input type="range" id="posY" class="transform-slider" min="-100" max="100" value="0" step="1" oninput="updateTemplateTransform()">
-                        <input type="number" id="posYVal" class="transform-input" value="0" onchange="updateTemplateFromInput()">
-                        
-                        <span>🔍</span>
-                        <input type="range" id="scale" class="transform-slider" min="0.1" max="3" value="1" step="0.1" oninput="updateTemplateTransform()">
-                        <input type="number" id="scaleVal" class="transform-input" value="1" step="0.1" onchange="updateTemplateFromInput()">
-                        
-                        <span>🔄</span>
-                        <input type="range" id="rotate" class="transform-slider" min="0" max="360" value="0" step="5" oninput="updateTemplateTransform()">
-                        <input type="number" id="rotateVal" class="transform-input" value="0" onchange="updateTemplateFromInput()">
-                    </div>
-                    
-                    <div id="partyInfo" style="display: none;" class="party-info">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span id="partyNameDisplay"></span>
-                            <span id="partyColorDisplay" style="padding: 2px 10px; border-radius: 12px;"></span>
-                        </div>
-                        <div class="party-members" id="partyMembers"></div>
-                    </div>
-                    
-                    <!-- Диалог создания команды -->
-                    <div id="createPartyDialog" style="display: none; margin-top: 10px;">
-                        <input type="text" id="partyName" class="party-password-field" placeholder="Название команды" maxlength="30">
-                        <input type="password" id="partyPassword" class="party-password-field" placeholder="Пароль" style="margin-top: 5px;">
-                        <select id="partyColor" class="color-select" style="margin-top: 5px; width: 100%;">
-                            <option value="#E31E24">🔴 Красный</option>
-                            <option value="#0039A6">🔵 Синий</option>
-                            <option value="#1E4D1E">🟢 Зелёный</option>
-                            <option value="#FFD700">🟡 Жёлтый</option>
-                            <option value="#ED7D31">🟠 Оранжевый</option>
-                            <option value="#800080">🟣 Фиолетовый</option>
-                        </select>
-                        <div style="display: flex; gap: 5px; margin-top: 5px;">
-                            <button class="party-btn" onclick="createParty()">Создать</button>
-                            <button class="party-btn" onclick="cancelPartyDialog()">Отмена</button>
-                        </div>
-                    </div>
-                    
-                    <!-- Диалог входа в команду -->
-                    <div id="joinPartyDialog" style="display: none; margin-top: 10px;">
-                        <input type="text" id="joinPartyName" class="party-password-field" placeholder="Название команды" maxlength="30">
-                        <input type="password" id="joinPartyPassword" class="party-password-field" placeholder="Пароль" style="margin-top: 5px;">
-                        <div style="display: flex; gap: 5px; margin-top: 5px;">
-                            <button class="party-btn" onclick="joinParty()">Войти</button>
-                            <button class="party-btn" onclick="cancelJoinDialog()">Отмена</button>
-                        </div>
-                    </div>
-                </div>
             </div>
             
             <div class="chat-section">
@@ -965,7 +709,7 @@
         </div>
         
         <div class="footer">
-            Труд крут! • День РСО • 9 цветов • команды • шаблоны
+            Труд крут! • День РСО • 9 цветов • зум колесом и ползунками
         </div>
     </div>
     
@@ -993,6 +737,7 @@
                 <div class="banned-tab" onclick="switchBannedTab('words')">Слова</div>
             </div>
             
+            <!-- Запрещённые символы -->
             <div class="banned-panel active" id="bannedCharsPanel">
                 <div class="banned-input">
                     <input type="text" id="bannedCharsInput" class="banned-field" placeholder="Введи символы для запрета" maxlength="30">
@@ -1001,6 +746,7 @@
                 <div class="banned-list" id="bannedCharsList"></div>
             </div>
             
+            <!-- Запрещённые слова -->
             <div class="banned-panel" id="bannedWordsPanel">
                 <div class="banned-input">
                     <input type="text" id="bannedWordsInput" class="banned-field" placeholder="Введи слово для запрета" maxlength="30">
@@ -1014,6 +760,7 @@
                 <button onclick="clearBannedWords()" style="flex: 1; padding: 5px; background: #ff4444; border: none; border-radius: 5px; color: white; font-weight: bold;">Очистить слова</button>
             </div>
             
+            <!-- Кнопка удаления всех сообщений -->
             <button class="danger-btn" onclick="deleteAllMessages()">🗑️ УДАЛИТЬ ВСЕ СООБЩЕНИЯ</button>
         </div>
         
@@ -1055,26 +802,6 @@
         let pixels = {};
         let messages = {};
         let zoom = 1;
-        
-        // Данные команды
-        let myParty = null;
-        let partyMembers = [];
-        let partyTemplate = null;
-        let partyLeader = null;
-        
-        // Редактирование шаблона
-        let editMode = false;
-        let templateTransform = {
-            x: 0,
-            y: 0,
-            scale: 1,
-            rotate: 0
-        };
-        let templateImage = null;
-        let templateCanvas = document.createElement('canvas');
-        templateCanvas.width = SIZE;
-        templateCanvas.height = SIZE;
-        let templateCtx = templateCanvas.getContext('2d');
         
         const canvas = document.getElementById('pixelCanvas');
         const ctx = canvas.getContext('2d');
@@ -1119,339 +846,68 @@
             updateBannedWordsList();
         });
         
-        // ===== ЗАГРУЗКА КОМАНД =====
-        const partiesRef = database.ref('parties');
-        partiesRef.on('value', (snapshot) => {
-            const parties = snapshot.val() || {};
+        function updateBannedCharsList() {
+            const listElement = document.getElementById('bannedCharsList');
+            if (!listElement) return;
             
-            // Проверяем, в какой команде состоит текущий игрок
-            for (let partyId in parties) {
-                const party = parties[partyId];
-                if (party.members && party.members.includes(myId)) {
-                    myParty = { id: partyId, ...party };
-                    partyLeader = party.leader;
-                    break;
-                }
-            }
-            
-            updatePartyUI();
-        });
-        
-        // Загрузка шаблона команды
-        const templatesRef = database.ref('templates');
-        templatesRef.on('value', (snapshot) => {
-            partyTemplate = snapshot.val() || null;
-            if (partyTemplate && partyTemplate.imageData) {
-                // Восстанавливаем изображение из сохранённых данных
-                const img = new Image();
-                img.onload = () => {
-                    templateCtx.clearRect(0, 0, SIZE, SIZE);
-                    templateCtx.drawImage(img, 0, 0, SIZE, SIZE);
-                    templateImage = img;
-                };
-                img.src = partyTemplate.imageData;
-            }
-            renderCanvas();
-        });
-        
-        function updatePartyUI() {
-            const partyInfo = document.getElementById('partyInfo');
-            const partyTitle = document.getElementById('partyTitle');
-            const templateBtn = document.getElementById('templateBtn');
-            const editTemplateBtn = document.getElementById('editTemplateBtn');
-            const applyTemplateBtn = document.getElementById('applyTemplateBtn');
-            
-            if (myParty) {
-                partyInfo.style.display = 'block';
-                document.getElementById('partyNameDisplay').innerHTML = `🚩 ${myParty.name}`;
-                document.getElementById('partyColorDisplay').innerHTML = `🎨 Цвет команды`;
-                document.getElementById('partyColorDisplay').style.backgroundColor = myParty.color;
-                document.getElementById('partyColorDisplay').style.color = '#fff';
-                
-                // Список участников
-                const membersList = document.getElementById('partyMembers');
-                membersList.innerHTML = '';
-                myParty.members.forEach(memberId => {
-                    const memberSpan = document.createElement('span');
-                    memberSpan.className = 'party-member';
-                    if (memberId === myParty.leader) {
-                        memberSpan.classList.add('party-leader');
-                        memberSpan.innerHTML = '👑 ' + memberId.substring(0, 6);
-                    } else {
-                        memberSpan.textContent = memberId.substring(0, 6);
-                    }
-                    membersList.appendChild(memberSpan);
-                });
-                
-                partyTitle.innerHTML = `🚩 Команда: ${myParty.name}`;
-                
-                // Если игрок лидер, кнопки активны
-                if (myParty.leader === myId) {
-                    templateBtn.classList.remove('disabled');
-                    editTemplateBtn.style.display = 'inline-block';
-                    if (editMode) {
-                        editTemplateBtn.classList.add('active');
-                        applyTemplateBtn.style.display = 'inline-block';
-                        document.getElementById('transformPanel').style.display = 'flex';
-                    } else {
-                        editTemplateBtn.classList.remove('active');
-                        applyTemplateBtn.style.display = 'none';
-                        document.getElementById('transformPanel').style.display = 'none';
-                    }
-                } else {
-                    templateBtn.classList.add('disabled');
-                    editTemplateBtn.style.display = 'none';
-                    applyTemplateBtn.style.display = 'none';
-                    document.getElementById('transformPanel').style.display = 'none';
-                }
+            listElement.innerHTML = '';
+            if (!bannedChars || bannedChars.length === 0) {
+                listElement.innerHTML = '📝 Нет запрещённых символов';
+                listElement.style.color = '#aaa';
             } else {
-                partyInfo.style.display = 'none';
-                partyTitle.innerHTML = '🚩 Команда: нет';
-                templateBtn.classList.remove('disabled');
-                editTemplateBtn.style.display = 'none';
-                applyTemplateBtn.style.display = 'none';
-                document.getElementById('transformPanel').style.display = 'none';
+                listElement.style.color = '#ffd700';
+                bannedChars.split('').forEach(char => {
+                    const span = document.createElement('span');
+                    span.className = 'banned-list-item';
+                    let displayChar = char;
+                    if (char === ' ') displayChar = '␣';
+                    if (char === '\n') displayChar = '↵';
+                    span.textContent = displayChar;
+                    span.onclick = () => removeBannedChar(char);
+                    listElement.appendChild(span);
+                });
             }
         }
         
-        // ===== СОЗДАНИЕ КОМАНДЫ =====
-        window.showCreateParty = function() {
-            if (myParty) {
-                alert('Ты уже в команде! Сначала выйди.');
-                return;
+        function updateBannedWordsList() {
+            const listElement = document.getElementById('bannedWordsList');
+            if (!listElement) return;
+            
+            listElement.innerHTML = '';
+            if (!bannedWords || bannedWords.length === 0) {
+                listElement.innerHTML = '📝 Нет запрещённых слов';
+                listElement.style.color = '#aaa';
+            } else {
+                listElement.style.color = '#ffd700';
+                bannedWords.forEach(word => {
+                    const span = document.createElement('span');
+                    span.className = 'banned-list-item';
+                    span.textContent = word;
+                    span.onclick = () => removeBannedWord(word);
+                    listElement.appendChild(span);
+                });
             }
-            document.getElementById('createPartyDialog').style.display = 'block';
-        };
+        }
         
-        window.cancelPartyDialog = function() {
-            document.getElementById('createPartyDialog').style.display = 'none';
-        };
-        
-        window.createParty = function() {
-            const name = document.getElementById('partyName').value.trim();
-            const password = document.getElementById('partyPassword').value.trim();
-            const color = document.getElementById('partyColor').value;
+        // ===== ПРОВЕРКА СООБЩЕНИЙ =====
+        function containsBannedContent(text) {
+            const lowerText = text.toLowerCase();
             
-            if (!name || !password) {
-                alert('Введи название и пароль');
-                return;
-            }
-            
-            const partyId = 'party_' + Date.now();
-            const partyData = {
-                name: name,
-                password: password,
-                color: color,
-                leader: myId,
-                members: [myId],
-                created: Date.now()
-            };
-            
-            database.ref('parties/' + partyId).set(partyData);
-            document.getElementById('createPartyDialog').style.display = 'none';
-            document.getElementById('partyName').value = '';
-            document.getElementById('partyPassword').value = '';
-        };
-        
-        // ===== ВХОД В КОМАНДУ =====
-        window.showJoinParty = function() {
-            if (myParty) {
-                alert('Ты уже в команде! Сначала выйди.');
-                return;
-            }
-            document.getElementById('joinPartyDialog').style.display = 'block';
-        };
-        
-        window.cancelJoinDialog = function() {
-            document.getElementById('joinPartyDialog').style.display = 'none';
-        };
-        
-        window.joinParty = function() {
-            const name = document.getElementById('joinPartyName').value.trim();
-            const password = document.getElementById('joinPartyPassword').value.trim();
-            
-            if (!name || !password) {
-                alert('Введи название и пароль');
-                return;
-            }
-            
-            partiesRef.once('value', (snapshot) => {
-                const parties = snapshot.val() || {};
-                let foundParty = null;
-                let foundPartyId = null;
-                
-                for (let id in parties) {
-                    if (parties[id].name === name && parties[id].password === password) {
-                        foundParty = parties[id];
-                        foundPartyId = id;
-                        break;
-                    }
+            // Проверка символов
+            for (let char of text) {
+                if (bannedChars.includes(char)) {
+                    return { type: 'char', value: char };
                 }
-                
-                if (foundParty) {
-                    const members = foundParty.members || [];
-                    if (!members.includes(myId)) {
-                        members.push(myId);
-                        database.ref('parties/' + foundPartyId + '/members').set(members);
-                    }
-                    document.getElementById('joinPartyDialog').style.display = 'none';
-                    document.getElementById('joinPartyName').value = '';
-                    document.getElementById('joinPartyPassword').value = '';
-                } else {
-                    alert('Команда не найдена или неверный пароль');
+            }
+            
+            // Проверка слов
+            for (let word of bannedWords) {
+                if (lowerText.includes(word.toLowerCase())) {
+                    return { type: 'word', value: word };
                 }
-            });
-        };
-        
-        // ===== ВЫХОД ИЗ КОМАНДЫ =====
-        window.leaveParty = function() {
-            if (!myParty) return;
-            
-            if (confirm('Выйти из команды?')) {
-                const members = myParty.members.filter(id => id !== myId);
-                
-                if (members.length === 0) {
-                    database.ref('parties/' + myParty.id).remove();
-                } else {
-                    database.ref('parties/' + myParty.id + '/members').set(members);
-                    
-                    if (myParty.leader === myId) {
-                        database.ref('parties/' + myParty.id + '/leader').set(members[0]);
-                    }
-                }
-                
-                myParty = null;
-                updatePartyUI();
-            }
-        };
-        
-        // ===== ЗАГРУЗКА ШАБЛОНА =====
-        window.uploadTemplate = function() {
-            if (!myParty) {
-                alert('❌ Сначала нужно войти в команду!');
-                return;
             }
             
-            if (myParty.leader !== myId) {
-                alert('❌ Только лидер команды может загружать шаблон!');
-                return;
-            }
-            
-            document.getElementById('templateUpload').click();
-        };
-        
-        window.handleTemplateUpload = function(input) {
-            const file = input.files[0];
-            if (!file) return;
-            
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const img = new Image();
-                img.onload = function() {
-                    // Сохраняем оригинальное изображение
-                    templateImage = img;
-                    
-                    // Рисуем на скрытом канвасе с сохранением пропорций
-                    templateCtx.clearRect(0, 0, SIZE, SIZE);
-                    
-                    // Вычисляем пропорции чтобы вписать в 200x200
-                    const scale = Math.min(SIZE / img.width, SIZE / img.height);
-                    const x = (SIZE - img.width * scale) / 2;
-                    const y = (SIZE - img.height * scale) / 2;
-                    
-                    templateCtx.drawImage(img, x, y, img.width * scale, img.height * scale);
-                    
-                    // Сохраняем в Firebase
-                    database.ref('templates/' + myParty.id).set({
-                        leader: myParty.leader,
-                        imageData: e.target.result,
-                        transform: templateTransform,
-                        timestamp: Date.now()
-                    });
-                    
-                    alert('✅ Шаблон загружен!');
-                };
-                img.src = e.target.result;
-            };
-            reader.readAsDataURL(file);
-        };
-        
-        // ===== РЕДАКТИРОВАНИЕ ШАБЛОНА =====
-        window.toggleEditMode = function() {
-            if (myParty.leader !== myId) return;
-            
-            editMode = !editMode;
-            updatePartyUI();
-            renderCanvas();
-        };
-        
-        window.updateTemplateTransform = function() {
-            templateTransform.x = parseInt(document.getElementById('posX').value);
-            templateTransform.y = parseInt(document.getElementById('posY').value);
-            templateTransform.scale = parseFloat(document.getElementById('scale').value);
-            templateTransform.rotate = parseInt(document.getElementById('rotate').value);
-            
-            document.getElementById('posXVal').value = templateTransform.x;
-            document.getElementById('posYVal').value = templateTransform.y;
-            document.getElementById('scaleVal').value = templateTransform.scale;
-            document.getElementById('rotateVal').value = templateTransform.rotate;
-            
-            renderCanvas();
-        };
-        
-        window.updateTemplateFromInput = function() {
-            templateTransform.x = parseInt(document.getElementById('posXVal').value) || 0;
-            templateTransform.y = parseInt(document.getElementById('posYVal').value) || 0;
-            templateTransform.scale = parseFloat(document.getElementById('scaleVal').value) || 1;
-            templateTransform.rotate = parseInt(document.getElementById('rotateVal').value) || 0;
-            
-            document.getElementById('posX').value = templateTransform.x;
-            document.getElementById('posY').value = templateTransform.y;
-            document.getElementById('scale').value = templateTransform.scale;
-            document.getElementById('rotate').value = templateTransform.rotate;
-            
-            renderCanvas();
-        };
-        
-        window.applyTemplate = function() {
-            if (myParty.leader !== myId) return;
-            
-            // Сохраняем трансформацию
-            database.ref('templates/' + myParty.id + '/transform').set(templateTransform);
-            
-            editMode = false;
-            updatePartyUI();
-            renderCanvas();
-        };
-        
-        // Обновляем рендер с учётом шаблона и трансформации
-        function renderCanvas() {
-            ctx.clearRect(0, 0, SIZE, SIZE);
-            
-            // Рисуем пиксели
-            for (let key in pixels) {
-                const [x, y] = key.split(',').map(Number);
-                ctx.fillStyle = pixels[key];
-                ctx.fillRect(x, y, 1, 1);
-            }
-            
-            // Рисуем шаблон, если есть и если игрок в команде
-            if (myParty && partyTemplate && partyTemplate.leader === myParty.leader) {
-                ctx.save();
-                ctx.globalAlpha = 0.3;
-                
-                // Применяем трансформацию
-                ctx.translate(SIZE/2, SIZE/2);
-                ctx.translate(templateTransform.x, templateTransform.y);
-                ctx.scale(templateTransform.scale, templateTransform.scale);
-                ctx.rotate(templateTransform.rotate * Math.PI / 180);
-                ctx.translate(-SIZE/2, -SIZE/2);
-                
-                // Рисуем шаблон из скрытого канваса
-                ctx.drawImage(templateCanvas, 0, 0, SIZE, SIZE);
-                
-                ctx.restore();
-            }
+            return null;
         }
         
         // ===== ПИКСЕЛИ =====
@@ -1459,6 +915,16 @@
             pixels = snapshot.val() || {};
             renderCanvas();
         });
+        
+        function renderCanvas() {
+            ctx.clearRect(0, 0, SIZE, SIZE);
+            
+            for (let key in pixels) {
+                const [x, y] = key.split(',').map(Number);
+                ctx.fillStyle = pixels[key];
+                ctx.fillRect(x, y, 1, 1);
+            }
+        }
         
         // ===== ОНЛАЙН =====
         const userRef = database.ref('online/' + myId);
@@ -1511,6 +977,7 @@
             }
         };
         
+        // ===== УДАЛЕНИЕ ВСЕХ СООБЩЕНИЙ =====
         window.deleteAllMessages = function() {
             if (!isAdmin) {
                 alert('Только админ может удалять сообщения');
@@ -1527,6 +994,16 @@
             const input = document.getElementById('chatInput');
             const text = input.value.trim();
             if (!text) return;
+            
+            const banned = containsBannedContent(text);
+            if (banned) {
+                if (banned.type === 'char') {
+                    alert(`Сообщение содержит запрещённый символ: "${banned.value}"`);
+                } else {
+                    alert(`Сообщение содержит запрещённое слово: "${banned.value}"`);
+                }
+                return;
+            }
             
             const nick = document.getElementById('nickname').value.trim() || 'Боец';
             localStorage.setItem('pixelNick', nick);
@@ -1776,49 +1253,6 @@
                 addConsoleOutput('✅ Все запрещённые слова удалены');
             }
         };
-        
-        function updateBannedCharsList() {
-            const listElement = document.getElementById('bannedCharsList');
-            if (!listElement) return;
-            
-            listElement.innerHTML = '';
-            if (!bannedChars || bannedChars.length === 0) {
-                listElement.innerHTML = '📝 Нет запрещённых символов';
-                listElement.style.color = '#aaa';
-            } else {
-                listElement.style.color = '#ffd700';
-                bannedChars.split('').forEach(char => {
-                    const span = document.createElement('span');
-                    span.className = 'banned-list-item';
-                    let displayChar = char;
-                    if (char === ' ') displayChar = '␣';
-                    if (char === '\n') displayChar = '↵';
-                    span.textContent = displayChar;
-                    span.onclick = () => removeBannedChar(char);
-                    listElement.appendChild(span);
-                });
-            }
-        }
-        
-        function updateBannedWordsList() {
-            const listElement = document.getElementById('bannedWordsList');
-            if (!listElement) return;
-            
-            listElement.innerHTML = '';
-            if (!bannedWords || bannedWords.length === 0) {
-                listElement.innerHTML = '📝 Нет запрещённых слов';
-                listElement.style.color = '#aaa';
-            } else {
-                listElement.style.color = '#ffd700';
-                bannedWords.forEach(word => {
-                    const span = document.createElement('span');
-                    span.className = 'banned-list-item';
-                    span.textContent = word;
-                    span.onclick = () => removeBannedWord(word);
-                    listElement.appendChild(span);
-                });
-            }
-        }
         
         function processCommand() {
             if (!isAdmin) {
