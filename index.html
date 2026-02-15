@@ -789,6 +789,7 @@
         
         const SIZE = 200;
         const COOLDOWN = 5;
+        const MESSAGE_COOLDOWN = 3; // 3 секунды между сообщениями
         const ADMIN_PASSWORD = "rsoadmin";
         
         // Пустые списки запретов по умолчанию
@@ -797,6 +798,7 @@
         
         let currentColor = '#E31E24';
         let lastPixelTime = 0;
+        let lastMessageTime = 0; // Время последнего сообщения
         const myId = Math.random().toString(36).substring(2);
         let isAdmin = false;
         let pixels = {};
@@ -995,6 +997,14 @@
             const text = input.value.trim();
             if (!text) return;
             
+            // Проверка на кулдаун сообщений
+            const now = Date.now() / 1000;
+            if (now - lastMessageTime < MESSAGE_COOLDOWN) {
+                const wait = Math.ceil(MESSAGE_COOLDOWN - (now - lastMessageTime));
+                alert(`⏳ Подожди ${wait} секунд перед следующим сообщением`);
+                return;
+            }
+            
             const banned = containsBannedContent(text);
             if (banned) {
                 if (banned.type === 'char') {
@@ -1008,8 +1018,8 @@
             const nick = document.getElementById('nickname').value.trim() || 'Боец';
             localStorage.setItem('pixelNick', nick);
             
-            const now = new Date();
-            const time = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+            const nowDate = new Date();
+            const time = nowDate.getHours().toString().padStart(2,'0') + ':' + nowDate.getMinutes().toString().padStart(2,'0');
             
             database.ref('chat').push({
                 nick: nick,
@@ -1017,6 +1027,9 @@
                 time: time,
                 timestamp: Date.now()
             });
+            
+            // Обновляем время последнего сообщения
+            lastMessageTime = now;
             
             input.value = '';
         }
