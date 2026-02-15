@@ -88,7 +88,7 @@
             border: 3px solid #ffd700;
             overflow: hidden;
             position: relative;
-            cursor: crosshair;
+            cursor: none;
             min-height: 0;
         }
         
@@ -138,6 +138,48 @@
             border: 2px solid #ffd700;
             pointer-events: none;
             z-index: 100;
+        }
+        
+        /* Затемнение */
+        .dark-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            pointer-events: none;
+            z-index: 50;
+            display: none;
+        }
+        
+        /* Подсветка пикселя */
+        .pixel-highlight {
+            position: absolute;
+            width: 5px;
+            height: 5px;
+            border: 3px solid #FFD700;
+            background: rgba(255, 215, 0, 0.2);
+            pointer-events: none;
+            z-index: 200;
+            display: none;
+            box-shadow: 0 0 20px gold;
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.5);
+                opacity: 0.7;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
         }
         
         .color-panel {
@@ -450,6 +492,8 @@
                     <div id="canvas-container">
                         <canvas id="pixelCanvas" width="200" height="200"></canvas>
                     </div>
+                    <div class="dark-overlay" id="darkOverlay"></div>
+                    <div class="pixel-highlight" id="pixelHighlight"></div>
                     <div class="coords-display" id="coordsDisplay">x: 0, y: 0</div>
                 </div>
                 
@@ -472,7 +516,7 @@
                     <div class="cooldown-box">
                         <span>⏳</span> <span id="cooldownDisplay">0</span> сек
                     </div>
-                    <div>200x200 • наведи на пиксель</div>
+                    <div>200x200 • пиксель подсвечен</div>
                 </div>
             </div>
             
@@ -488,7 +532,7 @@
                         <span class="nick">🤖 Система:</span> Добро пожаловать в Союзный пиксель-баттл!
                     </div>
                     <div class="message system">
-                        <span class="nick">🤖 Система:</span> Наведи на пиксель - он подсветится жёлтым
+                        <span class="nick">🤖 Система:</span> Жёлтый квадрат - место клика
                     </div>
                 </div>
                 
@@ -528,14 +572,15 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     
     <script>
+        // 🔥 ТВОИ ДАННЫЕ FIREBASE
         const firebaseConfig = {
-  apiKey: "AIzaSyBgXwtCm5mnHu09TeqYREuwCZLZnJdmQso",
-  authDomain: "rsosoyuz.firebaseapp.com",
-  databaseURL: "https://rsosoyuz-default-rtdb.firebaseio.com",
-  projectId: "rsosoyuz",
-  storageBucket: "rsosoyuz.firebasestorage.app",
-  messagingSenderId: "86520665711",
-  appId: "1:86520665711:web:89dfe55de35a4a8b919f9a"
+            apiKey: "AIzaSyBgXwtCm5mnHu09TeqYREuwCZLZnJdmQso",
+            authDomain: "rsosoyuz.firebaseapp.com",
+            databaseURL: "https://rsosoyuz-default-rtdb.firebaseio.com",
+            projectId: "rsosoyuz",
+            storageBucket: "rsosoyuz.firebasestorage.app",
+            messagingSenderId: "86520665711",
+            appId: "1:86520665711:web:89dfe55de35a4a8b919f9a"
         };
 
         firebase.initializeApp(firebaseConfig);
@@ -549,14 +594,14 @@
         let lastPixelTime = 0;
         const myId = Math.random().toString(36).substring(2);
         let isAdmin = false;
-        let hoverPixel = { x: 0, y: 0 };
         let pixels = {};
         let zoom = 1;
-        let mouseInside = false;
         
         const canvas = document.getElementById('pixelCanvas');
         const ctx = canvas.getContext('2d');
         const container = document.getElementById('canvas-container');
+        const darkOverlay = document.getElementById('darkOverlay');
+        const pixelHighlight = document.getElementById('pixelHighlight');
         
         let myNick = localStorage.getItem('pixelNick') || 'Боец';
         document.getElementById('nickname').value = myNick;
@@ -578,45 +623,10 @@
         function renderCanvas() {
             ctx.clearRect(0, 0, SIZE, SIZE);
             
-            // Рисуем все пиксели
             for (let key in pixels) {
                 const [x, y] = key.split(',').map(Number);
                 ctx.fillStyle = pixels[key];
                 ctx.fillRect(x, y, 1, 1);
-            }
-            
-            // Рисуем сетку (каждый пиксель имеет свою обводку)
-            ctx.strokeStyle = '#999999';
-            ctx.lineWidth = 0.2;
-            
-            // Вертикальные линии
-            for (let i = 0; i <= SIZE; i++) {
-                ctx.beginPath();
-                ctx.moveTo(i, 0);
-                ctx.lineTo(i, SIZE);
-                ctx.stroke();
-            }
-            
-            // Горизонтальные линии
-            for (let i = 0; i <= SIZE; i++) {
-                ctx.beginPath();
-                ctx.moveTo(0, i);
-                ctx.lineTo(SIZE, i);
-                ctx.stroke();
-            }
-            
-            // ПОДСВЕТКА ПРИ НАВЕДЕНИИ - жёлтая рамка вокруг текущего пикселя
-            if (mouseInside && hoverPixel.x >= 0 && hoverPixel.x < SIZE && hoverPixel.y >= 0 && hoverPixel.y < SIZE) {
-                ctx.strokeStyle = '#FFD700';
-                ctx.lineWidth = 2;
-                ctx.strokeRect(hoverPixel.x, hoverPixel.y, 1, 1);
-            }
-            
-            // Для админа дополнительная подсветка
-            if (isAdmin && mouseInside) {
-                ctx.strokeStyle = 'white';
-                ctx.lineWidth = 3;
-                ctx.strokeRect(hoverPixel.x, hoverPixel.y, 1, 1);
             }
         }
         
@@ -673,27 +683,47 @@
             return div.innerHTML;
         }
         
-        // Обработка движения мыши с подсветкой
+        // ИСПРАВЛЕННАЯ СИСТЕМА ПОДСВЕТКИ
         canvas.addEventListener('mousemove', (e) => {
-            mouseInside = true;
             const rect = canvas.getBoundingClientRect();
+            const containerRect = container.getBoundingClientRect();
             
             const scrollLeft = container.scrollLeft;
             const scrollTop = container.scrollTop;
             
+            // Получаем координаты пикселя
             const x = Math.floor(((e.clientX - rect.left + scrollLeft) / (rect.width / SIZE)));
             const y = Math.floor(((e.clientY - rect.top + scrollTop) / (rect.height / SIZE)));
             
             if (x >= 0 && x < SIZE && y >= 0 && y < SIZE) {
-                hoverPixel = { x, y };
+                // Показываем затемнение и подсветку
+                darkOverlay.style.display = 'block';
+                pixelHighlight.style.display = 'block';
+                
+                // Рассчитываем позицию пикселя относительно контейнера
+                const pixelX = (x * rect.width / SIZE) + rect.left - containerRect.left - scrollLeft;
+                const pixelY = (y * rect.height / SIZE) + rect.top - containerRect.top - scrollTop;
+                
+                // Размер одного пикселя в пикселях экрана
+                const pixelSize = rect.width / SIZE;
+                
+                // Устанавливаем подсветку прямо на пиксель
+                pixelHighlight.style.left = (pixelX + pixelSize/2) + 'px';
+                pixelHighlight.style.top = (pixelY + pixelSize/2) + 'px';
+                pixelHighlight.style.width = pixelSize + 'px';
+                pixelHighlight.style.height = pixelSize + 'px';
+                pixelHighlight.style.border = '3px solid #FFD700';
+                pixelHighlight.style.background = 'rgba(255, 215, 0, 0.2)';
+                pixelHighlight.style.transform = 'translate(-50%, -50%)';
+                
                 document.getElementById('coordsDisplay').innerHTML = `x: ${x}, y: ${y}`;
-                renderCanvas(); // Перерисовываем с подсветкой
             }
         });
         
         canvas.addEventListener('mouseleave', () => {
-            mouseInside = false;
-            renderCanvas(); // Убираем подсветку
+            darkOverlay.style.display = 'none';
+            pixelHighlight.style.display = 'none';
+            document.getElementById('coordsDisplay').innerHTML = 'x: 0, y: 0';
         });
         
         canvas.addEventListener('click', (e) => {
@@ -772,7 +802,6 @@
                 addConsoleOutput('✅ Доступ разрешен. Добро пожаловать, администратор!');
                 document.getElementById('consoleInput').disabled = false;
                 document.querySelector('.console-send').disabled = false;
-                renderCanvas();
             } else {
                 addConsoleOutput('❌ Неверный пароль');
             }
@@ -814,7 +843,6 @@
                 document.getElementById('consoleInput').disabled = true;
                 document.querySelector('.console-send').disabled = true;
                 addConsoleOutput('👋 Выход');
-                renderCanvas();
                 hideConsole();
                 
             } else if (command.startsWith('delete ')) {
@@ -849,4 +877,3 @@
     </script>
 </body>
 </html>
-
