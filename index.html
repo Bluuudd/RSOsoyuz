@@ -1036,4 +1036,43 @@
                         
                         const minX = Math.max(0, Math.min(x1, x2));
                         const maxX = Math.min(SIZE - 1, Math.max(x1, x2));
-                        const minY = Math.max(0, Math.min(y1
+                        const minY = Math.max(0, Math.min(y1, y2));
+                        const maxY = Math.min(SIZE - 1, Math.max(y1, y2));
+                        
+                        let deletedCount = 0;
+                        
+                        for (let x = minX; x <= maxX; x++) {
+                            for (let y = minY; y <= maxY; y++) {
+                                database.ref('pixels/' + x + ',' + y).remove();
+                                deletedCount++;
+                            }
+                        }
+                        
+                        addConsoleOutput(`✅ Удалено пикселей: ${deletedCount}`);
+                    } else {
+                        addConsoleOutput('❌ Неправильный формат');
+                    }
+                }
+            } else if (command) {
+                addConsoleOutput('❌ Неизвестная команда');
+            }
+        }
+        
+        document.getElementById('consoleInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') processCommand();
+        });
+        
+        renderCanvas();
+        
+        setTimeout(() => {
+            database.ref('chat').push({
+                nick: '🤖 Система',
+                text: 'Добро пожаловать в Союзный пиксель-баттл!',
+                time: '00:00',
+                system: true,
+                timestamp: Date.now()
+            });
+        }, 1000);
+    </script>
+</body>
+</html>
