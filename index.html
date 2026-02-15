@@ -72,7 +72,6 @@
             height: calc(100% - 60px);
         }
         
-        /* Левая часть с холстом */
         .canvas-section {
             flex: 3;
             display: flex;
@@ -184,7 +183,6 @@
             box-shadow: 0 0 15px gold;
         }
         
-        /* Правая часть с чатом */
         .chat-section {
             flex: 1;
             background: #f5f5f5;
@@ -328,7 +326,6 @@
             margin-right: 5px;
         }
         
-        /* Скрытая консоль (по кнопке ъ) */
         .console-panel {
             position: fixed;
             top: 50%;
@@ -366,11 +363,6 @@
             padding: 10px;
             border-radius: 5px;
             margin-bottom: 15px;
-        }
-        
-        .console-line {
-            color: #ffd700;
-            margin-bottom: 5px;
         }
         
         .console-input-line {
@@ -434,7 +426,6 @@
             flex-shrink: 0;
         }
         
-        /* Палитра */
         .red { background: #E31E24; }
         .blue { background: #0039A6; }
         .green { background: #1E4D1E; }
@@ -454,7 +445,6 @@
         </div>
         
         <div class="main-content">
-            <!-- Левая часть: холст -->
             <div class="canvas-section">
                 <div class="canvas-wrapper">
                     <div id="canvas-container">
@@ -482,11 +472,10 @@
                     <div class="cooldown-box">
                         <span>⏳</span> <span id="cooldownDisplay">0</span> сек
                     </div>
-                    <div>Сетка 200x200 • видно каждый пиксель</div>
+                    <div>200x200 • наведи на пиксель</div>
                 </div>
             </div>
             
-            <!-- Правая часть: чат -->
             <div class="chat-section">
                 <div class="chat-header">💬 Общий чат</div>
                 
@@ -499,7 +488,7 @@
                         <span class="nick">🤖 Система:</span> Добро пожаловать в Союзный пиксель-баттл!
                     </div>
                     <div class="message system">
-                        <span class="nick">🤖 Система:</span> Рисуй, общайся, строй отряд!
+                        <span class="nick">🤖 Система:</span> Наведи на пиксель - он подсветится жёлтым
                     </div>
                 </div>
                 
@@ -515,7 +504,6 @@
         </div>
     </div>
     
-    <!-- Скрытая консоль администратора -->
     <div class="console-overlay" id="consoleOverlay" onclick="hideConsole()"></div>
     <div class="console-panel" id="consolePanel">
         <div class="console-header">🔧 АДМИН-КОНСОЛЬ [СКРЫТАЯ]</div>
@@ -536,31 +524,27 @@
         </div>
     </div>
 
-    <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     
     <script>
-        // 🔥 ТВОИ ДАННЫЕ FIREBASE 🔥
         const firebaseConfig = {
-  apiKey: "AIzaSyBgXwtCm5mnHu09TeqYREuwCZLZnJdmQso",
-  authDomain: "rsosoyuz.firebaseapp.com",
-  databaseURL: "https://rsosoyuz-default-rtdb.firebaseio.com",
-  projectId: "rsosoyuz",
-  storageBucket: "rsosoyuz.firebasestorage.app",
-  messagingSenderId: "86520665711",
-  appId: "1:86520665711:web:89dfe55de35a4a8b919f9a"
+            apiKey: "AIzaSyBxFzK-zjKlfg4RgK7dHx8Lk9mN0qRsT2U",
+            authDomain: "rso-pixel-battle.firebaseapp.com",
+            databaseURL: "https://rso-pixel-battle-default-rtdb.firebaseio.com",
+            projectId: "rso-pixel-battle",
+            storageBucket: "rso-pixel-battle.appspot.com",
+            messagingSenderId: "123456789012",
+            appId: "1:123456789012:web:abc123def456"
         };
 
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
         
-        // Настройки
         const SIZE = 200;
         const COOLDOWN = 5;
-        const ADMIN_PASSWORD = "rsoadmin"; // 🔑 СМЕНИ НА СВОЙ!
+        const ADMIN_PASSWORD = "rsoadmin";
         
-        // Состояние
         let currentColor = '#E31E24';
         let lastPixelTime = 0;
         const myId = Math.random().toString(36).substring(2);
@@ -568,17 +552,15 @@
         let hoverPixel = { x: 0, y: 0 };
         let pixels = {};
         let zoom = 1;
+        let mouseInside = false;
         
-        // Элементы
         const canvas = document.getElementById('pixelCanvas');
         const ctx = canvas.getContext('2d');
         const container = document.getElementById('canvas-container');
         
-        // Чат
         let myNick = localStorage.getItem('pixelNick') || 'Боец';
         document.getElementById('nickname').value = myNick;
         
-        // ========== ЗУМ И ПЕРЕМЕЩЕНИЕ ==========
         container.addEventListener('wheel', (e) => {
             e.preventDefault();
             const delta = e.deltaY > 0 ? 0.9 : 1.1;
@@ -588,30 +570,24 @@
             canvas.style.height = (1000 * zoom) + 'px';
         });
         
-        // ========== ЗАГРУЗКА ПИКСЕЛЕЙ ==========
         database.ref('pixels').on('value', (snapshot) => {
             pixels = snapshot.val() || {};
             renderCanvas();
         });
         
-        // ========== ОТРИСОВКА С ЧЁТКОЙ СЕТКОЙ ==========
         function renderCanvas() {
             ctx.clearRect(0, 0, SIZE, SIZE);
             
-            // Рисуем белый фон
-            ctx.fillStyle = '#FFFFFF';
-            ctx.fillRect(0, 0, SIZE, SIZE);
-            
-            // Рисуем все сохранённые пиксели
+            // Рисуем все пиксели
             for (let key in pixels) {
                 const [x, y] = key.split(',').map(Number);
                 ctx.fillStyle = pixels[key];
                 ctx.fillRect(x, y, 1, 1);
             }
             
-            // ТОНКАЯ СЕТКА (каждый пиксель)
-            ctx.strokeStyle = '#666666';
-            ctx.lineWidth = 0.3;
+            // Рисуем сетку (каждый пиксель имеет свою обводку)
+            ctx.strokeStyle = '#999999';
+            ctx.lineWidth = 0.2;
             
             // Вертикальные линии
             for (let i = 0; i <= SIZE; i++) {
@@ -629,32 +605,26 @@
                 ctx.stroke();
             }
             
-            // ЖИРНАЯ СЕТКА (каждые 10 пикселей)
-            ctx.strokeStyle = '#333333';
-            ctx.lineWidth = 1.2;
-            for (let i = 0; i <= SIZE; i += 10) {
-                // Вертикальные
-                ctx.beginPath();
-                ctx.moveTo(i, 0);
-                ctx.lineTo(i, SIZE);
-                ctx.stroke();
+            // ПОДСВЕТКА ПРИ НАВЕДЕНИИ - жёлтая рамка вокруг текущего пикселя
+            if (mouseInside && hoverPixel.x >= 0 && hoverPixel.x < SIZE && hoverPixel.y >= 0 && hoverPixel.y < SIZE) {
+                ctx.strokeStyle = '#FFD700';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(hoverPixel.x, hoverPixel.y, 1, 1);
                 
-                // Горизонтальные
-                ctx.beginPath();
-                ctx.moveTo(0, i);
-                ctx.lineTo(SIZE, i);
-                ctx.stroke();
+                // Вторая рамка для контраста
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = 0.5;
+                ctx.strokeRect(hoverPixel.x, hoverPixel.y, 1, 1);
             }
             
-            // Подсветка при наведении для админа
-            if (isAdmin) {
+            // Для админа дополнительная подсветка
+            if (isAdmin && mouseInside) {
                 ctx.strokeStyle = 'white';
-                ctx.lineWidth = 2;
+                ctx.lineWidth = 3;
                 ctx.strokeRect(hoverPixel.x, hoverPixel.y, 1, 1);
             }
         }
         
-        // ========== ОНЛАЙН ПОЛЬЗОВАТЕЛИ ==========
         const userRef = database.ref('online/' + myId);
         userRef.onDisconnect().remove();
         userRef.set(true);
@@ -663,8 +633,6 @@
             document.getElementById('onlineCount').innerHTML = `👥 ${snapshot.numChildren()}`;
         });
         
-        // ========== ЧАТ ==========
-        // Загрузка сообщений
         database.ref('chat').limitToLast(50).on('value', (snapshot) => {
             const messages = document.getElementById('chatMessages');
             messages.innerHTML = '';
@@ -678,7 +646,6 @@
             messages.scrollTop = messages.scrollHeight;
         });
         
-        // Отправка сообщения
         function sendMessage() {
             const input = document.getElementById('chatInput');
             const text = input.value.trim();
@@ -711,12 +678,11 @@
             return div.innerHTML;
         }
         
-        // ========== КООРДИНАТЫ ПРИ НАВЕДЕНИИ ==========
+        // Обработка движения мыши с подсветкой
         canvas.addEventListener('mousemove', (e) => {
+            mouseInside = true;
             const rect = canvas.getBoundingClientRect();
-            const scale = SIZE / (rect.width / zoom);
             
-            // Учитываем прокрутку
             const scrollLeft = container.scrollLeft;
             const scrollTop = container.scrollTop;
             
@@ -726,14 +692,15 @@
             if (x >= 0 && x < SIZE && y >= 0 && y < SIZE) {
                 hoverPixel = { x, y };
                 document.getElementById('coordsDisplay').innerHTML = `x: ${x}, y: ${y}`;
-                
-                if (isAdmin) {
-                    renderCanvas();
-                }
+                renderCanvas(); // Перерисовываем с подсветкой
             }
         });
         
-        // ========== КЛИК ПО ХОЛСТУ ==========
+        canvas.addEventListener('mouseleave', () => {
+            mouseInside = false;
+            renderCanvas(); // Убираем подсветку
+        });
+        
         canvas.addEventListener('click', (e) => {
             const now = Date.now() / 1000;
             if (now - lastPixelTime < COOLDOWN) {
@@ -743,7 +710,6 @@
             }
             
             const rect = canvas.getBoundingClientRect();
-            const scale = SIZE / (rect.width / zoom);
             
             const scrollLeft = container.scrollLeft;
             const scrollTop = container.scrollTop;
@@ -763,7 +729,6 @@
             }
         });
         
-        // ========== ВЫБОР ЦВЕТА ==========
         document.querySelectorAll('.color-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('selected'));
@@ -772,7 +737,6 @@
             });
         });
         
-        // ========== КУЛДАУН ==========
         function startCooldown() {
             const display = document.getElementById('cooldownDisplay');
             let timeLeft = COOLDOWN;
@@ -787,7 +751,6 @@
             }, 1000);
         }
         
-        // ========== СКРЫТАЯ КОНСОЛЬ (КНОПКА Ъ) ==========
         document.addEventListener('keydown', (e) => {
             if (e.key === 'ъ' || e.key === 'Ъ' || e.code === 'Backquote' || e.key === '`') {
                 e.preventDefault();
@@ -807,7 +770,6 @@
             document.getElementById('consoleOverlay').classList.remove('visible');
         }
         
-        // Авторизация в консоли
         function adminLogin() {
             const pass = document.getElementById('adminPassword').value;
             if (pass === ADMIN_PASSWORD) {
@@ -888,7 +850,6 @@
             if (e.key === 'Enter') processCommand();
         });
         
-        // Инициализация
         renderCanvas();
     </script>
 </body>
