@@ -587,7 +587,7 @@
             
             // Рисуем сетку (каждый пиксель имеет свою обводку)
             ctx.strokeStyle = '#999999';
-            ctx.lineWidth = 0.2;
+            ctx.lineWidth = 0.6;
             
             // Вертикальные линии
             for (let i = 0; i <= SIZE; i++) {
@@ -604,10 +604,11 @@
                 ctx.lineTo(SIZE, i);
                 ctx.stroke();
             }
-                
-                // Вторая рамка для контраста
-                ctx.strokeStyle = '#000000';
-                ctx.lineWidth = 0.5;
+            
+            // ПОДСВЕТКА ПРИ НАВЕДЕНИИ - жёлтая рамка вокруг текущего пикселя
+            if (mouseInside && hoverPixel.x >= 0 && hoverPixel.x < SIZE && hoverPixel.y >= 0 && hoverPixel.y < SIZE) {
+                ctx.strokeStyle = '#FFD700';
+                ctx.lineWidth = 2;
                 ctx.strokeRect(hoverPixel.x, hoverPixel.y, 1, 1);
             }
             
@@ -848,5 +849,3 @@
     </script>
 </body>
 </html>
-
-
