@@ -100,19 +100,9 @@
             scrollbar-width: thin;
             scrollbar-color: #ffd700 #2d5a2d;
             background: #1a3a1a;
-            transition: scrollbar-color 0.3s ease;
         }
         
-        /* Стили для скроллбаров - по умолчанию скрыты */
         #canvas-container::-webkit-scrollbar {
-            width: 0;
-            height: 0;
-            background: transparent;
-            transition: all 0.3s ease;
-        }
-        
-        /* При наведении показываем скроллбары */
-        #canvas-container:hover::-webkit-scrollbar {
             width: 12px;
             height: 12px;
         }
@@ -132,29 +122,12 @@
             background: #edb900;
         }
         
-        #canvas-container::-webkit-scrollbar-corner {
-            background: #1a3a1a;
-        }
-        
-        /* Для Firefox */
-        #canvas-container {
-            scrollbar-width: thin;
-            scrollbar-color: transparent transparent;
-            transition: scrollbar-color 0.3s ease;
-        }
-        
-        #canvas-container:hover {
-            scrollbar-color: #ffd700 #1a3a1a;
-        }
-        
         #pixelCanvas {
             display: block;
             background: white;
             image-rendering: pixelated;
             width: 500px;
             height: 500px;
-            transition: transform 0.1s ease;
-            transform-origin: 0 0;
         }
         
         .coords-display {
@@ -171,19 +144,6 @@
             border: 2px solid #ffd700;
             pointer-events: none;
             z-index: 100;
-        }
-        
-        /* Затемнение */
-        .dark-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
-            pointer-events: none;
-            z-index: 50;
-            display: none;
         }
         
         .color-panel {
@@ -288,6 +248,16 @@
             border: 1px solid #1e4d1e;
             position: relative;
             transition: all 0.2s;
+            padding-bottom: 18px;
+        }
+        
+        .message-id {
+            font-size: 0.6em;
+            color: #888;
+            position: absolute;
+            bottom: 2px;
+            right: 8px;
+            font-family: monospace;
         }
         
         .message:hover .delete-message {
@@ -411,12 +381,73 @@
             margin-right: 5px;
         }
         
+        .zoom-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
         .zoom-level {
             background: #1e4d1e;
             color: #ffd700;
             padding: 5px 10px;
             border-radius: 20px;
             font-size: 0.9em;
+            min-width: 70px;
+            text-align: center;
+        }
+        
+        .zoom-slider {
+            width: 120px;
+            height: 6px;
+            background: #1e4d1e;
+            border-radius: 3px;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+        
+        .zoom-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            background: #ffd700;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid #1e4d1e;
+        }
+        
+        .zoom-slider::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            background: #ffd700;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid #1e4d1e;
+        }
+        
+        .zoom-buttons {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .zoom-btn {
+            background: #1e4d1e;
+            color: #ffd700;
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            font-size: 1.2em;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .zoom-btn:hover {
+            background: #2d6a2d;
         }
         
         .console-panel {
@@ -424,7 +455,8 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 500px;
+            width: 600px;
+            max-width: 90vw;
             background: #1a1a1a;
             border: 3px solid #ffd700;
             border-radius: 15px;
@@ -456,11 +488,13 @@
             padding: 10px;
             border-radius: 5px;
             margin-bottom: 15px;
+            font-size: 0.9em;
         }
         
         .console-input-line {
             display: flex;
             gap: 10px;
+            margin-bottom: 15px;
         }
         
         .console-prompt {
@@ -495,6 +529,44 @@
             font-size: 0.85em;
             border-top: 1px solid #333;
             padding-top: 10px;
+        }
+        
+        .banned-chars-section {
+            margin-top: 15px;
+            border-top: 1px solid #ffd700;
+            padding-top: 15px;
+        }
+        
+        .banned-chars-title {
+            color: #ffd700;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+        
+        .banned-chars-input {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .banned-chars-field {
+            flex: 1;
+            background: #333;
+            border: 1px solid #ffd700;
+            color: #ffd700;
+            padding: 8px;
+            border-radius: 5px;
+            font-family: monospace;
+        }
+        
+        .banned-chars-list {
+            background: #333;
+            padding: 10px;
+            border-radius: 5px;
+            color: #ffd700;
+            font-size: 1.1em;
+            letter-spacing: 2px;
+            min-height: 40px;
         }
         
         .console-overlay {
@@ -543,7 +615,6 @@
                     <div id="canvas-container">
                         <canvas id="pixelCanvas" width="200" height="200"></canvas>
                     </div>
-                    <div class="dark-overlay" id="darkOverlay"></div>
                     <div class="coords-display" id="coordsDisplay">x: 0, y: 0</div>
                 </div>
                 
@@ -566,7 +637,12 @@
                     <div class="cooldown-box">
                         <span>⏳</span> <span id="cooldownDisplay">0</span> сек
                     </div>
-                    <div class="zoom-level" id="zoomDisplay">🔍 1.0x</div>
+                    <div class="zoom-controls">
+                        <button class="zoom-btn" onclick="changeZoom(-0.2)">−</button>
+                        <span class="zoom-level" id="zoomDisplay">1.0x</span>
+                        <button class="zoom-btn" onclick="changeZoom(0.2)">+</button>
+                        <input type="range" min="0.3" max="3" step="0.1" value="1" class="zoom-slider" id="zoomSlider" oninput="setZoom(this.value)">
+                    </div>
                 </div>
             </div>
             
@@ -587,13 +663,13 @@
         </div>
         
         <div class="footer">
-            Труд крут! • День РСО • 9 цветов • общий чат • зум колесом • скролл при наведении
+            Труд крут! • День РСО • 9 цветов • зум колесом и ползунками
         </div>
     </div>
     
     <div class="console-overlay" id="consoleOverlay" onclick="hideConsole()"></div>
     <div class="console-panel" id="consolePanel">
-        <div class="console-header">🔧 АДМИН-КОНСОЛЬ [СКРЫТАЯ]</div>
+        <div class="console-header">🔧 АДМИН-КОНСОЛЬ</div>
         <div class="console-content" id="consoleOutput">
             > Введи пароль для доступа<br>
         </div>
@@ -606,8 +682,22 @@
             <input type="text" class="console-input" id="consoleInput" placeholder="help" disabled>
             <button class="console-send" onclick="processCommand()" disabled>⏎</button>
         </div>
+        
+        <div class="banned-chars-section" id="bannedCharsSection" style="display: none;">
+            <div class="banned-chars-title">🚫 Запрещённые символы</div>
+            <div class="banned-chars-input">
+                <input type="text" id="bannedCharsInput" class="banned-chars-field" placeholder="Введи символы для запрета" maxlength="30">
+                <button onclick="addBannedChars()" style="padding: 8px 15px; background: #ffd700; border: none; border-radius: 5px; font-weight: bold;">Добавить</button>
+            </div>
+            <div class="banned-chars-list" id="bannedCharsList"></div>
+            <div style="margin-top: 10px; display: flex; gap: 5px;">
+                <button onclick="clearBannedChars()" style="flex: 1; padding: 5px; background: #ff4444; border: none; border-radius: 5px; color: white; font-weight: bold;">Очистить всё</button>
+                <button onclick="resetBannedChars()" style="flex: 1; padding: 5px; background: #888; border: none; border-radius: 5px; color: white; font-weight: bold;">Сброс</button>
+            </div>
+        </div>
+        
         <div class="console-help">
-            delete x,y • delete x1,y1;x2,y2 • delete msg ID • clear • help • exit
+            delete x,y • delete x1,y1;x2,y2 • delete msg ID • messages • banned • clear • exit
         </div>
     </div>
 
@@ -632,54 +722,87 @@
         const SIZE = 200;
         const COOLDOWN = 5;
         const ADMIN_PASSWORD = "rsoadmin";
+        const DEFAULT_BANNED_CHARS = "!@#$%^&*()_+={}[]|\\:;\"'<>,.?/~`";
         
         let currentColor = '#E31E24';
         let lastPixelTime = 0;
         const myId = Math.random().toString(36).substring(2);
         let isAdmin = false;
         let pixels = {};
-        let zoom = 1;
         let messages = {};
+        let bannedChars = DEFAULT_BANNED_CHARS;
+        let zoom = 1;
         
         const canvas = document.getElementById('pixelCanvas');
         const ctx = canvas.getContext('2d');
         const container = document.getElementById('canvas-container');
-        const darkOverlay = document.getElementById('darkOverlay');
+        const zoomSlider = document.getElementById('zoomSlider');
+        const zoomDisplay = document.getElementById('zoomDisplay');
         
         let myNick = localStorage.getItem('pixelNick') || 'Боец';
         document.getElementById('nickname').value = myNick;
         
-        // ===== ЗУМ КОЛЁСИКОМ =====
+        // ===== ЗУМ =====
+        function setZoom(value) {
+            zoom = parseFloat(value);
+            canvas.style.width = (500 * zoom) + 'px';
+            canvas.style.height = (500 * zoom) + 'px';
+            zoomDisplay.textContent = zoom.toFixed(1) + 'x';
+            zoomSlider.value = zoom;
+        }
+        
+        function changeZoom(delta) {
+            let newZoom = zoom + delta;
+            newZoom = Math.min(Math.max(newZoom, 0.3), 3);
+            setZoom(newZoom);
+        }
+        
+        // Зум колёсиком
         container.addEventListener('wheel', (e) => {
             e.preventDefault();
-            
-            // Сохраняем позицию скролла до зумирования
-            const scrollLeft = container.scrollLeft;
-            const scrollTop = container.scrollTop;
-            
-            // Коэффициент зумирования
-            const delta = e.deltaY > 0 ? 0.9 : 1.1;
-            zoom *= delta;
-            
-            // Ограничиваем зум от 0.5 до 3
-            zoom = Math.min(Math.max(zoom, 0.5), 3);
-            
-            // Применяем зум к канвасу
-            canvas.style.transform = `scale(${zoom})`;
-            
-            // Корректируем скролл, чтобы центр оставался примерно на том же месте
-            const rect = canvas.getBoundingClientRect();
-            const mouseX = e.clientX - rect.left;
-            const mouseY = e.clientY - rect.top;
-            
-            container.scrollLeft = scrollLeft + mouseX * (delta - 1);
-            container.scrollTop = scrollTop + mouseY * (delta - 1);
-            
-            // Обновляем отображение зума
-            document.getElementById('zoomDisplay').innerHTML = `🔍 ${zoom.toFixed(1)}x`;
+            const delta = e.deltaY > 0 ? -0.1 : 0.1;
+            changeZoom(delta);
         });
         
-        // Загрузка пикселей
+        // Загрузка запрещённых символов
+        const bannedCharsRef = database.ref('bannedChars');
+        bannedCharsRef.on('value', (snapshot) => {
+            const chars = snapshot.val();
+            if (chars) {
+                bannedChars = chars;
+            } else {
+                bannedCharsRef.set(DEFAULT_BANNED_CHARS);
+                bannedChars = DEFAULT_BANNED_CHARS;
+            }
+            updateBannedCharsList();
+        });
+        
+        function updateBannedCharsList() {
+            const listElement = document.getElementById('bannedCharsList');
+            if (listElement) {
+                if (bannedChars.length === 0) {
+                    listElement.innerHTML = '🚫 Нет запрещённых символов';
+                    listElement.style.color = '#aaa';
+                } else {
+                    listElement.innerHTML = bannedChars.split('').map(c => {
+                        if (c === ' ') return '␣';
+                        if (c === '\n') return '↵';
+                        return c;
+                    }).join(' ');
+                    listElement.style.color = '#ffd700';
+                }
+            }
+        }
+        
+        function containsBannedChars(text) {
+            for (let char of text) {
+                if (bannedChars.includes(char)) {
+                    return char;
+                }
+            }
+            return false;
+        }
+        
         database.ref('pixels').on('value', (snapshot) => {
             pixels = snapshot.val() || {};
             renderCanvas();
@@ -703,7 +826,6 @@
             document.getElementById('onlineCount').innerHTML = `👥 ${snapshot.numChildren()}`;
         });
         
-        // ===== ЧАТ С УДАЛЕНИЕМ =====
         database.ref('chat').on('value', (snapshot) => {
             const messagesContainer = document.getElementById('chatMessages');
             messagesContainer.innerHTML = '';
@@ -722,12 +844,12 @@
                 
                 let messageHtml = '';
                 
-                // Кнопка удаления (только для админа)
                 if (isAdmin) {
                     messageHtml += `<span class="delete-message" onclick="deleteMessage('${msgId}')">×</span>`;
                 }
                 
                 messageHtml += `<span class="nick">${escapeHtml(msg.nick)}:</span> ${escapeHtml(msg.text)} <span class="time">${msg.time || ''}</span>`;
+                messageHtml += `<span class="message-id">${msgId.substring(0, 8)}...</span>`;
                 
                 div.innerHTML = messageHtml;
                 messagesContainer.appendChild(div);
@@ -736,7 +858,6 @@
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
         });
         
-        // Функция удаления сообщения
         window.deleteMessage = function(messageId) {
             if (!isAdmin) {
                 alert('Только админ может удалять сообщения');
@@ -753,6 +874,12 @@
             const input = document.getElementById('chatInput');
             const text = input.value.trim();
             if (!text) return;
+            
+            const badChar = containsBannedChars(text);
+            if (badChar) {
+                alert(`Сообщение содержит запрещённый символ: "${badChar}"`);
+                return;
+            }
             
             const nick = document.getElementById('nickname').value.trim() || 'Боец';
             localStorage.setItem('pixelNick', nick);
@@ -781,29 +908,25 @@
             return div.innerHTML;
         }
         
-        // Подсветка пикселя при наведении
+        // Показываем координаты без затемнения
         canvas.addEventListener('mousemove', (e) => {
             const rect = canvas.getBoundingClientRect();
             
-            // Учитываем зум и скролл в расчётах
-            const canvasX = (e.clientX - rect.left + container.scrollLeft) / zoom;
-            const canvasY = (e.clientY - rect.top + container.scrollTop) / zoom;
+            const mouseX = (e.clientX - rect.left) / zoom;
+            const mouseY = (e.clientY - rect.top) / zoom;
             
-            if (canvasX >= 0 && canvasX <= SIZE && 
-                canvasY >= 0 && canvasY <= SIZE) {
+            if (mouseX >= 0 && mouseX <= rect.width / zoom && mouseY >= 0 && mouseY <= rect.height / zoom) {
                 
-                const pixelX = Math.floor(canvasX);
-                const pixelY = Math.floor(canvasY);
+                const pixelX = Math.floor(mouseX / (rect.width / zoom / SIZE));
+                const pixelY = Math.floor(mouseY / (rect.height / zoom / SIZE));
                 
                 if (pixelX >= 0 && pixelX < SIZE && pixelY >= 0 && pixelY < SIZE) {
-                    darkOverlay.style.display = 'block';
                     document.getElementById('coordsDisplay').innerHTML = `x: ${pixelX}, y: ${pixelY}`;
                 }
             }
         });
         
         canvas.addEventListener('mouseleave', () => {
-            darkOverlay.style.display = 'none';
             document.getElementById('coordsDisplay').innerHTML = 'x: 0, y: 0';
         });
         
@@ -817,11 +940,11 @@
             
             const rect = canvas.getBoundingClientRect();
             
-            const canvasX = (e.clientX - rect.left + container.scrollLeft) / zoom;
-            const canvasY = (e.clientY - rect.top + container.scrollTop) / zoom;
+            const mouseX = (e.clientX - rect.left) / zoom;
+            const mouseY = (e.clientY - rect.top) / zoom;
             
-            const x = Math.floor(canvasX);
-            const y = Math.floor(canvasY);
+            const x = Math.floor(mouseX / (rect.width / zoom / SIZE));
+            const y = Math.floor(mouseY / (rect.height / zoom / SIZE));
             
             if (x >= 0 && x < SIZE && y >= 0 && y < SIZE) {
                 lastPixelTime = now;
@@ -887,38 +1010,43 @@
             const pass = document.getElementById('adminPassword').value;
             if (pass === ADMIN_PASSWORD) {
                 isAdmin = true;
+                document.getElementById('bannedCharsSection').style.display = 'block';
                 addConsoleOutput('✅ Доступ разрешен. Добро пожаловать, администратор!');
                 document.getElementById('consoleInput').disabled = false;
                 document.querySelector('.console-send').disabled = false;
                 
-                // Перезагружаем чат с кнопками удаления
-                database.ref('chat').once('value', (snapshot) => {
-                    const messagesContainer = document.getElementById('chatMessages');
-                    messagesContainer.innerHTML = '';
-                    
-                    snapshot.forEach(child => {
-                        const msgId = child.key;
-                        const msg = child.val();
-                        
-                        const div = document.createElement('div');
-                        div.className = 'message';
-                        if (msg.system) {
-                            div.classList.add('system');
-                        }
-                        
-                        div.innerHTML = `
-                            <span class="delete-message" onclick="deleteMessage('${msgId}')">×</span>
-                            <span class="nick">${escapeHtml(msg.nick)}:</span> 
-                            ${escapeHtml(msg.text)} 
-                            <span class="time">${msg.time || ''}</span>
-                        `;
-                        
-                        messagesContainer.appendChild(div);
-                    });
-                });
+                refreshChatWithDeleteButtons();
             } else {
                 addConsoleOutput('❌ Неверный пароль');
             }
+        }
+        
+        function refreshChatWithDeleteButtons() {
+            database.ref('chat').once('value', (snapshot) => {
+                const messagesContainer = document.getElementById('chatMessages');
+                messagesContainer.innerHTML = '';
+                
+                snapshot.forEach(child => {
+                    const msgId = child.key;
+                    const msg = child.val();
+                    
+                    const div = document.createElement('div');
+                    div.className = 'message';
+                    if (msg.system) {
+                        div.classList.add('system');
+                    }
+                    
+                    div.innerHTML = `
+                        <span class="delete-message" onclick="deleteMessage('${msgId}')">×</span>
+                        <span class="nick">${escapeHtml(msg.nick)}:</span> 
+                        ${escapeHtml(msg.text)} 
+                        <span class="time">${msg.time || ''}</span>
+                        <span class="message-id">${msgId.substring(0, 8)}...</span>
+                    `;
+                    
+                    messagesContainer.appendChild(div);
+                });
+            });
         }
         
         function addConsoleOutput(text) {
@@ -926,6 +1054,35 @@
             output.innerHTML += '> ' + text + '<br>';
             output.scrollTop = output.scrollHeight;
         }
+        
+        window.addBannedChars = function() {
+            if (!isAdmin) return;
+            const input = document.getElementById('bannedCharsInput');
+            const charsToAdd = input.value.trim();
+            if (!charsToAdd) return;
+            
+            const newBannedChars = [...new Set((bannedChars + charsToAdd).split(''))].join('');
+            
+            database.ref('bannedChars').set(newBannedChars);
+            addConsoleOutput(`✅ Добавлены символы: ${charsToAdd}`);
+            input.value = '';
+        };
+        
+        window.clearBannedChars = function() {
+            if (!isAdmin) return;
+            if (confirm('Очистить все запрещённые символы?')) {
+                database.ref('bannedChars').set('');
+                addConsoleOutput('✅ Все запрещённые символы удалены');
+            }
+        };
+        
+        window.resetBannedChars = function() {
+            if (!isAdmin) return;
+            if (confirm('Сбросить к стандартному набору символов?')) {
+                database.ref('bannedChars').set(DEFAULT_BANNED_CHARS);
+                addConsoleOutput('✅ Сброшено к стандартному набору');
+            }
+        };
         
         function processCommand() {
             if (!isAdmin) {
@@ -941,10 +1098,21 @@
             
             if (command === 'help') {
                 addConsoleOutput('delete x,y - удалить один пиксель');
-                addConsoleOutput('delete x1,y1;x2,y2 - удалить квадрат между точками');
-                addConsoleOutput('delete msg ID - удалить сообщение по ID');
+                addConsoleOutput('delete x1,y1;x2,y2 - удалить квадрат');
+                addConsoleOutput('delete msg ID - удалить сообщение');
+                addConsoleOutput('messages - показать все ID сообщений');
+                addConsoleOutput('banned - показать запрещённые символы');
                 addConsoleOutput('clear - очистить весь холст');
                 addConsoleOutput('exit - выйти');
+                
+            } else if (command === 'messages') {
+                addConsoleOutput('📨 ID сообщений:');
+                for (let id in messages) {
+                    addConsoleOutput(`  ${id}: ${messages[id].nick} - ${messages[id].text.substring(0, 30)}`);
+                }
+                
+            } else if (command === 'banned') {
+                addConsoleOutput(`🚫 Запрещённые символы: ${bannedChars || '(нет)'}`);
                 
             } else if (command === 'clear') {
                 if (confirm('Точно очистить ВЕСЬ холст?')) {
@@ -955,12 +1123,12 @@
                 
             } else if (command === 'exit') {
                 isAdmin = false;
+                document.getElementById('bannedCharsSection').style.display = 'none';
                 document.getElementById('consoleInput').disabled = true;
                 document.querySelector('.console-send').disabled = true;
                 addConsoleOutput('👋 Выход');
                 hideConsole();
                 
-                // Перезагружаем чат без кнопок удаления
                 database.ref('chat').once('value', (snapshot) => {
                     const messagesContainer = document.getElementById('chatMessages');
                     messagesContainer.innerHTML = '';
@@ -978,6 +1146,7 @@
                             <span class="nick">${escapeHtml(msg.nick)}:</span> 
                             ${escapeHtml(msg.text)} 
                             <span class="time">${msg.time || ''}</span>
+                            <span class="message-id">${child.key.substring(0, 8)}...</span>
                         `;
                         
                         messagesContainer.appendChild(div);
@@ -987,14 +1156,13 @@
             } else if (command.startsWith('delete ')) {
                 const coordsPart = command.substring(7).trim();
                 
-                // Проверяем, может это удаление сообщения
                 if (coordsPart.startsWith('msg ')) {
                     const msgId = coordsPart.substring(4).trim();
                     if (messages[msgId]) {
                         database.ref('chat/' + msgId).remove();
                         addConsoleOutput(`✅ Сообщение ${msgId} удалено`);
                     } else {
-                        addConsoleOutput('❌ Сообщение с таким ID не найдено');
+                        addConsoleOutput('❌ Сообщение не найдено');
                     }
                     return;
                 }
@@ -1002,7 +1170,6 @@
                 const points = coordsPart.split(';');
                 
                 if (points.length === 1) {
-                    // Удаление одного пикселя
                     const match = points[0].match(/(\d+)\s*,\s*(\d+)/);
                     if (match) {
                         const x = parseInt(match[1]);
@@ -1014,11 +1181,10 @@
                             addConsoleOutput('❌ Координаты вне холста');
                         }
                     } else {
-                        addConsoleOutput('❌ Неправильный формат. Используй: delete x,y');
+                        addConsoleOutput('❌ Неправильный формат');
                     }
                     
                 } else if (points.length === 2) {
-                    // Удаление квадрата между двумя точками
                     const match1 = points[0].match(/(\d+)\s*,\s*(\d+)/);
                     const match2 = points[1].match(/(\d+)\s*,\s*(\d+)/);
                     
@@ -1042,14 +1208,11 @@
                             }
                         }
                         
-                        addConsoleOutput(`✅ Удалено пикселей: ${deletedCount} (квадрат от (${minX},${minY}) до (${maxX},${maxY}))`);
+                        addConsoleOutput(`✅ Удалено пикселей: ${deletedCount}`);
                     } else {
-                        addConsoleOutput('❌ Неправильный формат. Используй: delete x1,y1;x2,y2');
+                        addConsoleOutput('❌ Неправильный формат');
                     }
-                } else {
-                    addConsoleOutput('❌ Слишком много точек. Используй 1 или 2 точки');
                 }
-                
             } else if (command) {
                 addConsoleOutput('❌ Неизвестная команда');
             }
@@ -1061,7 +1224,6 @@
         
         renderCanvas();
         
-        // Добавляем системное сообщение
         setTimeout(() => {
             database.ref('chat').push({
                 nick: '🤖 Система',
@@ -1071,17 +1233,6 @@
                 timestamp: Date.now()
             });
         }, 1000);
-
-        // Добавляем подсказку о скролле
-        setTimeout(() => {
-            database.ref('chat').push({
-                nick: 'ℹ️ Подсказка',
-                text: 'При наведении на холст появляются ползунки прокрутки справа и снизу',
-                time: '00:00',
-                system: true,
-                timestamp: Date.now()
-            });
-        }, 3000);
     </script>
 </body>
 </html>
