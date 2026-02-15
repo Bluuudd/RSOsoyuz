@@ -604,12 +604,6 @@
                 ctx.lineTo(SIZE, i);
                 ctx.stroke();
             }
-            
-            // ПОДСВЕТКА ПРИ НАВЕДЕНИИ - жёлтая рамка вокруг текущего пикселя
-            if (mouseInside && hoverPixel.x >= 0 && hoverPixel.x < SIZE && hoverPixel.y >= 0 && hoverPixel.y < SIZE) {
-                ctx.strokeStyle = '#FFD700';
-                ctx.lineWidth = 2;
-                ctx.strokeRect(hoverPixel.x, hoverPixel.y, 1, 1);
                 
                 // Вторая рамка для контраста
                 ctx.strokeStyle = '#000000';
@@ -854,4 +848,5 @@
     </script>
 </body>
 </html>
+
 
