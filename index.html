@@ -88,7 +88,7 @@
             border: 3px solid #ffd700;
             overflow: hidden;
             position: relative;
-            cursor: crosshair;
+            cursor: default;
             min-height: 0;
         }
         
@@ -120,8 +120,8 @@
             display: block;
             background: white;
             image-rendering: pixelated;
-            width: 1000px;
-            height: 1000px;
+            width: 500px;
+            height: 500px;
         }
         
         .coords-display {
@@ -138,6 +138,19 @@
             border: 2px solid #ffd700;
             pointer-events: none;
             z-index: 100;
+        }
+        
+        /* Затемнение */
+        .dark-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            pointer-events: none;
+            z-index: 50;
+            display: none;
         }
         
         .color-panel {
@@ -450,6 +463,7 @@
                     <div id="canvas-container">
                         <canvas id="pixelCanvas" width="200" height="200"></canvas>
                     </div>
+                    <div class="dark-overlay" id="darkOverlay"></div>
                     <div class="coords-display" id="coordsDisplay">x: 0, y: 0</div>
                 </div>
                 
@@ -472,7 +486,7 @@
                     <div class="cooldown-box">
                         <span>⏳</span> <span id="cooldownDisplay">0</span> сек
                     </div>
-                    <div>200x200 • наведи на пиксель</div>
+                    <div>200x200 • свободное рисование</div>
                 </div>
             </div>
             
@@ -486,9 +500,6 @@
                 <div class="chat-messages" id="chatMessages">
                     <div class="message system">
                         <span class="nick">🤖 Система:</span> Добро пожаловать в Союзный пиксель-баттл!
-                    </div>
-                    <div class="message system">
-                        <span class="nick">🤖 Система:</span> Наведи на пиксель - он подсветится жёлтым
                     </div>
                 </div>
                 
@@ -528,14 +539,15 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     
     <script>
+        // 🔥 ТВОИ ДАННЫЕ FIREBASE
         const firebaseConfig = {
-  apiKey: "AIzaSyBgXwtCm5mnHu09TeqYREuwCZLZnJdmQso",
-  authDomain: "rsosoyuz.firebaseapp.com",
-  databaseURL: "https://rsosoyuz-default-rtdb.firebaseio.com",
-  projectId: "rsosoyuz",
-  storageBucket: "rsosoyuz.firebasestorage.app",
-  messagingSenderId: "86520665711",
-  appId: "1:86520665711:web:89dfe55de35a4a8b919f9a"
+            apiKey: "AIzaSyBgXwtCm5mnHu09TeqYREuwCZLZnJdmQso",
+            authDomain: "rsosoyuz.firebaseapp.com",
+            databaseURL: "https://rsosoyuz-default-rtdb.firebaseio.com",
+            projectId: "rsosoyuz",
+            storageBucket: "rsosoyuz.firebasestorage.app",
+            messagingSenderId: "86520665711",
+            appId: "1:86520665711:web:89dfe55de35a4a8b919f9a"
         };
 
         firebase.initializeApp(firebaseConfig);
@@ -549,27 +561,17 @@
         let lastPixelTime = 0;
         const myId = Math.random().toString(36).substring(2);
         let isAdmin = false;
-        let hoverPixel = { x: 0, y: 0 };
         let pixels = {};
-        let zoom = 1;
-        let mouseInside = false;
         
         const canvas = document.getElementById('pixelCanvas');
         const ctx = canvas.getContext('2d');
         const container = document.getElementById('canvas-container');
+        const darkOverlay = document.getElementById('darkOverlay');
         
         let myNick = localStorage.getItem('pixelNick') || 'Боец';
         document.getElementById('nickname').value = myNick;
         
-        container.addEventListener('wheel', (e) => {
-            e.preventDefault();
-            const delta = e.deltaY > 0 ? 0.9 : 1.1;
-            zoom *= delta;
-            zoom = Math.min(Math.max(zoom, 0.5), 3);
-            canvas.style.width = (1000 * zoom) + 'px';
-            canvas.style.height = (1000 * zoom) + 'px';
-        });
-        
+        // Загрузка пикселей
         database.ref('pixels').on('value', (snapshot) => {
             pixels = snapshot.val() || {};
             renderCanvas();
@@ -578,34 +580,11 @@
         function renderCanvas() {
             ctx.clearRect(0, 0, SIZE, SIZE);
             
-            // Рисуем все пиксели
             for (let key in pixels) {
                 const [x, y] = key.split(',').map(Number);
                 ctx.fillStyle = pixels[key];
                 ctx.fillRect(x, y, 1, 1);
             }
-            
-            // Рисуем сетку (каждый пиксель имеет свою обводку)
-            ctx.strokeStyle = '#999999';
-            ctx.lineWidth = 0.2;
-            
-            // Вертикальные линии
-            for (let i = 0; i <= SIZE; i++) {
-                ctx.beginPath();
-                ctx.moveTo(i, 0);
-                ctx.lineTo(i, SIZE);
-                ctx.stroke();
-            }
-            
-            // Горизонтальные линии
-            for (let i = 0; i <= SIZE; i++) {
-                ctx.beginPath();
-                ctx.moveTo(0, i);
-                ctx.lineTo(SIZE, i);
-                ctx.stroke();
-            }
-            
-            // ВЕСЬ БЛОК ПОДСВЕТКИ УДАЛЕН - теперь нет никаких обводок возле курсора
         }
         
         const userRef = database.ref('online/' + myId);
@@ -616,6 +595,7 @@
             document.getElementById('onlineCount').innerHTML = `👥 ${snapshot.numChildren()}`;
         });
         
+        // Чат
         database.ref('chat').limitToLast(50).on('value', (snapshot) => {
             const messages = document.getElementById('chatMessages');
             messages.innerHTML = '';
@@ -661,27 +641,28 @@
             return div.innerHTML;
         }
         
-        // Обработка движения мыши с подсветкой
+        // Подсветка пикселя при наведении (только затемнение, без обводки)
         canvas.addEventListener('mousemove', (e) => {
-            mouseInside = true;
             const rect = canvas.getBoundingClientRect();
             
-            const scrollLeft = container.scrollLeft;
-            const scrollTop = container.scrollTop;
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
             
-            const x = Math.floor(((e.clientX - rect.left + scrollLeft) / (rect.width / SIZE)));
-            const y = Math.floor(((e.clientY - rect.top + scrollTop) / (rect.height / SIZE)));
-            
-            if (x >= 0 && x < SIZE && y >= 0 && y < SIZE) {
-                hoverPixel = { x, y };
-                document.getElementById('coordsDisplay').innerHTML = `x: ${x}, y: ${y}`;
-                renderCanvas(); // Перерисовываем без подсветки
+            if (mouseX >= 0 && mouseX <= rect.width && mouseY >= 0 && mouseY <= rect.height) {
+                
+                const pixelX = Math.floor(mouseX / (rect.width / SIZE));
+                const pixelY = Math.floor(mouseY / (rect.height / SIZE));
+                
+                if (pixelX >= 0 && pixelX < SIZE && pixelY >= 0 && pixelY < SIZE) {
+                    darkOverlay.style.display = 'block';
+                    document.getElementById('coordsDisplay').innerHTML = `x: ${pixelX}, y: ${pixelY}`;
+                }
             }
         });
         
         canvas.addEventListener('mouseleave', () => {
-            mouseInside = false;
-            renderCanvas(); // Перерисовываем
+            darkOverlay.style.display = 'none';
+            document.getElementById('coordsDisplay').innerHTML = 'x: 0, y: 0';
         });
         
         canvas.addEventListener('click', (e) => {
@@ -694,11 +675,11 @@
             
             const rect = canvas.getBoundingClientRect();
             
-            const scrollLeft = container.scrollLeft;
-            const scrollTop = container.scrollTop;
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
             
-            const x = Math.floor(((e.clientX - rect.left + scrollLeft) / (rect.width / SIZE)));
-            const y = Math.floor(((e.clientY - rect.top + scrollTop) / (rect.height / SIZE)));
+            const x = Math.floor(mouseX / (rect.width / SIZE));
+            const y = Math.floor(mouseY / (rect.height / SIZE));
             
             if (x >= 0 && x < SIZE && y >= 0 && y < SIZE) {
                 lastPixelTime = now;
@@ -744,8 +725,15 @@
         function toggleConsole() {
             const panel = document.getElementById('consolePanel');
             const overlay = document.getElementById('consoleOverlay');
-            panel.classList.toggle('visible');
-            overlay.classList.toggle('visible');
+            
+            if (panel.classList.contains('visible')) {
+                panel.classList.remove('visible');
+                overlay.classList.remove('visible');
+            } else {
+                panel.classList.add('visible');
+                overlay.classList.add('visible');
+                document.getElementById('consoleInput').focus();
+            }
         }
         
         function hideConsole() {
@@ -760,7 +748,6 @@
                 addConsoleOutput('✅ Доступ разрешен. Добро пожаловать, администратор!');
                 document.getElementById('consoleInput').disabled = false;
                 document.querySelector('.console-send').disabled = false;
-                renderCanvas();
             } else {
                 addConsoleOutput('❌ Неверный пароль');
             }
@@ -785,9 +772,9 @@
             addConsoleOutput('$ ' + command);
             
             if (command === 'help') {
-                addConsoleOutput('delete x,y - удалить пиксель');
-                addConsoleOutput('delete x1,y1;x2,y2 - массовое удаление');
-                addConsoleOutput('clear - очистить холст');
+                addConsoleOutput('delete x,y - удалить один пиксель');
+                addConsoleOutput('delete x1,y1;x2,y2 - удалить квадрат между точками');
+                addConsoleOutput('clear - очистить весь холст');
                 addConsoleOutput('exit - выйти');
                 
             } else if (command === 'clear') {
@@ -802,27 +789,62 @@
                 document.getElementById('consoleInput').disabled = true;
                 document.querySelector('.console-send').disabled = true;
                 addConsoleOutput('👋 Выход');
-                renderCanvas();
                 hideConsole();
                 
             } else if (command.startsWith('delete ')) {
-                const coords = command.substring(7).trim();
-                const pairs = coords.split(';');
-                let count = 0;
+                const coordsPart = command.substring(7).trim();
+                const points = coordsPart.split(';');
                 
-                pairs.forEach(pair => {
-                    const match = pair.match(/(\d+)\s*,\s*(\d+)/);
+                if (points.length === 1) {
+                    // Удаление одного пикселя
+                    const match = points[0].match(/(\d+)\s*,\s*(\d+)/);
                     if (match) {
                         const x = parseInt(match[1]);
                         const y = parseInt(match[2]);
                         if (x >= 0 && x < SIZE && y >= 0 && y < SIZE) {
                             database.ref('pixels/' + x + ',' + y).remove();
-                            count++;
+                            addConsoleOutput(`✅ Удален пиксель (${x}, ${y})`);
+                        } else {
+                            addConsoleOutput('❌ Координаты вне холста');
                         }
+                    } else {
+                        addConsoleOutput('❌ Неправильный формат. Используй: delete x,y');
                     }
-                });
-                
-                addConsoleOutput(`✅ Удалено пикселей: ${count}`);
+                    
+                } else if (points.length === 2) {
+                    // Удаление квадрата между двумя точками
+                    const match1 = points[0].match(/(\d+)\s*,\s*(\d+)/);
+                    const match2 = points[1].match(/(\d+)\s*,\s*(\d+)/);
+                    
+                    if (match1 && match2) {
+                        const x1 = parseInt(match1[1]);
+                        const y1 = parseInt(match1[2]);
+                        const x2 = parseInt(match2[1]);
+                        const y2 = parseInt(match2[2]);
+                        
+                        // Определяем границы квадрата
+                        const minX = Math.max(0, Math.min(x1, x2));
+                        const maxX = Math.min(SIZE - 1, Math.max(x1, x2));
+                        const minY = Math.max(0, Math.min(y1, y2));
+                        const maxY = Math.min(SIZE - 1, Math.max(y1, y2));
+                        
+                        let deletedCount = 0;
+                        
+                        // Проходим по всем пикселям в квадрате
+                        for (let x = minX; x <= maxX; x++) {
+                            for (let y = minY; y <= maxY; y++) {
+                                database.ref('pixels/' + x + ',' + y).remove();
+                                deletedCount++;
+                            }
+                        }
+                        
+                        addConsoleOutput(`✅ Удалено пикселей: ${deletedCount} (квадрат от (${minX},${minY}) до (${maxX},${maxY}))`);
+                    } else {
+                        addConsoleOutput('❌ Неправильный формат. Используй: delete x1,y1;x2,y2');
+                    }
+                } else {
+                    addConsoleOutput('❌ Слишком много точек. Используй 1 или 2 точки');
+                }
                 
             } else if (command) {
                 addConsoleOutput('❌ Неизвестная команда');
