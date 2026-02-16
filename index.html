@@ -598,7 +598,6 @@
             cursor: pointer;
         }
         
-        /* Кнопка удаления всех сообщений */
         .danger-btn {
             background: #ff4444;
             color: white;
@@ -737,7 +736,6 @@
                 <div class="banned-tab" onclick="switchBannedTab('words')">Слова</div>
             </div>
             
-            <!-- Запрещённые символы -->
             <div class="banned-panel active" id="bannedCharsPanel">
                 <div class="banned-input">
                     <input type="text" id="bannedCharsInput" class="banned-field" placeholder="Введи символы для запрета" maxlength="30">
@@ -746,7 +744,6 @@
                 <div class="banned-list" id="bannedCharsList"></div>
             </div>
             
-            <!-- Запрещённые слова -->
             <div class="banned-panel" id="bannedWordsPanel">
                 <div class="banned-input">
                     <input type="text" id="bannedWordsInput" class="banned-field" placeholder="Введи слово для запрета" maxlength="30">
@@ -760,7 +757,6 @@
                 <button onclick="clearBannedWords()" style="flex: 1; padding: 5px; background: #ff4444; border: none; border-radius: 5px; color: white; font-weight: bold;">Очистить слова</button>
             </div>
             
-            <!-- Кнопка удаления всех сообщений -->
             <button class="danger-btn" onclick="deleteAllMessages()">🗑️ УДАЛИТЬ ВСЕ СООБЩЕНИЯ</button>
         </div>
         
@@ -1112,32 +1108,33 @@
         }
         
         // ===== ИСПРАВЛЕННАЯ КОНСОЛЬ =====
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'ъ' || e.key === 'Ъ' || e.code === 'Backquote' || e.key === '`') {
+        document.addEventListener('keydown', function(e) {
+            // Проверяем нажатие на букву "ъ" (русская), "ё" или Backquote
+            if (e.key === 'ъ' || e.key === 'Ъ' || e.key === 'ё' || e.key === 'Ё' || e.code === 'Backquote') {
                 e.preventDefault();
-                toggleConsole();
+                
+                const panel = document.getElementById('consolePanel');
+                const overlay = document.getElementById('consoleOverlay');
+                
+                // Просто переключаем классы
+                if (panel.classList.contains('visible')) {
+                    panel.classList.remove('visible');
+                    overlay.classList.remove('visible');
+                } else {
+                    panel.classList.add('visible');
+                    overlay.classList.add('visible');
+                    // Если консоль открылась, фокусируем input
+                    setTimeout(() => {
+                        document.getElementById('consoleInput').focus();
+                    }, 100);
+                }
             }
         });
-        
-        function toggleConsole() {
-            const panel = document.getElementById('consolePanel');
-            const overlay = document.getElementById('consoleOverlay');
-            
-            // Просто переключаем классы
-            panel.classList.toggle('visible');
-            overlay.classList.toggle('visible');
-            
-            // Если консоль открылась, фокусируем input
-            if (panel.classList.contains('visible')) {
-                document.getElementById('consoleInput').focus();
-            }
-        }
         
         function hideConsole() {
             const panel = document.getElementById('consolePanel');
             const overlay = document.getElementById('consoleOverlay');
             
-            // Просто убираем классы
             panel.classList.remove('visible');
             overlay.classList.remove('visible');
         }
