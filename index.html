@@ -440,7 +440,7 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 600px;
+            width: 700px;
             max-width: 90vw;
             background: #1a1a1a;
             border: 3px solid #ffd700;
@@ -514,6 +514,51 @@
             font-size: 0.85em;
             border-top: 1px solid #333;
             padding-top: 10px;
+        }
+        
+        .history-section {
+            margin-top: 15px;
+            border-top: 1px solid #ffd700;
+            padding-top: 15px;
+        }
+        
+        .history-title {
+            color: #ffd700;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+        
+        .history-controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+        
+        .history-btn {
+            background: #ffd700;
+            color: #1a1a1a;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+            flex: 1;
+        }
+        
+        .history-btn:hover {
+            background: #edb900;
+        }
+        
+        .history-slider {
+            width: 100%;
+            margin: 10px 0;
+        }
+        
+        .history-stats {
+            color: #ffd700;
+            font-size: 0.9em;
+            margin-top: 5px;
         }
         
         .banned-section {
@@ -728,6 +773,30 @@
             <button class="console-send" onclick="processCommand()" disabled>⏎</button>
         </div>
         
+        <!-- Секция истории холста -->
+        <div class="history-section" id="historySection" style="display: none;">
+            <div class="history-title">📹 История холста</div>
+            <div class="history-controls">
+                <button class="history-btn" onclick="exportVideo(1)">1x скорость</button>
+                <button class="history-btn" onclick="exportVideo(100)">100x</button>
+                <button class="history-btn" onclick="exportVideo(500)">500x</button>
+                <button class="history-btn" onclick="exportVideo(2000)">2000x</button>
+            </div>
+            <div class="history-controls">
+                <button class="history-btn" onclick="exportVideo('day')">За день</button>
+                <button class="history-btn" onclick="exportVideo('week')">За неделю</button>
+                <button class="history-btn" onclick="exportVideo('all')">Всё время</button>
+            </div>
+            <input type="range" id="historySpeed" class="history-slider" min="1" max="2000" value="100" step="1">
+            <div class="history-stats" id="historyStats">
+                Всего изменений: 0 • Длительность: 0 мин
+            </div>
+            <div style="margin-top: 10px;">
+                <button class="history-btn" onclick="previewTimelapse()" style="background: #00ff00; color: black;">👁️ Предпросмотр</button>
+                <button class="history-btn" onclick="downloadTimelapse()" style="background: #ffd700; margin-top: 5px;">⬇️ Скачать MP4</button>
+            </div>
+        </div>
+        
         <div class="banned-section" id="bannedSection" style="display: none;">
             <div class="banned-title">🚫 Управление запретами</div>
             
@@ -768,6 +837,9 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     
+    <!-- Библиотека для создания видео -->
+    <script src="https://cdn.jsdelivr.net/npm/ccapture.js@1.1.0/ccapture.min.js"></script>
+    
     <script>
         // 🔥 ТВОИ ДАННЫЕ FIREBASE
         const firebaseConfig = {
@@ -799,6 +871,7 @@
         let pixels = {};
         let messages = {};
         let zoom = 1;
+        let historyEvents = []; // Массив для хранения истории
         
         const canvas = document.getElementById('pixelCanvas');
         const ctx = canvas.getContext('2d');
@@ -829,6 +902,196 @@
             const delta = e.deltaY > 0 ? -0.1 : 0.1;
             changeZoom(delta);
         });
+        
+        // ===== ЗАГРУЗКА ИСТОРИИ =====
+        const historyRef = database.ref('history');
+        historyRef.limitToLast(10000).on('value', (snapshot) => {
+            historyEvents = [];
+            snapshot.forEach(child => {
+                historyEvents.push(child.val());
+            });
+            // Сортируем по времени
+            historyEvents.sort((a, b) => a.timestamp - b.timestamp);
+            updateHistoryStats();
+        });
+        
+        function updateHistoryStats() {
+            const statsEl = document.getElementById('historyStats');
+            if (!statsEl) return;
+            
+            const count = historyEvents.length;
+            if (count === 0) {
+                statsEl.innerHTML = 'Всего изменений: 0 • Длительность: 0 мин';
+                return;
+            }
+            
+            const firstTime = historyEvents[0].timestamp;
+            const lastTime = historyEvents[count - 1].timestamp;
+            const durationMinutes = ((lastTime - firstTime) / 60000).toFixed(1);
+            
+            statsEl.innerHTML = `Всего изменений: ${count} • Длительность: ${durationMinutes} мин`;
+        }
+        
+        // ===== ЭКСПОРТ ВИДЕО =====
+        window.exportVideo = function(speed) {
+            if (typeof speed === 'number') {
+                document.getElementById('historySpeed').value = speed;
+                generateTimelapse(speed);
+            } else {
+                // По периоду
+                const now = Date.now();
+                let startTime;
+                if (speed === 'day') startTime = now - 24*60*60*1000;
+                else if (speed === 'week') startTime = now - 7*24*60*60*1000;
+                else startTime = 0;
+                
+                const filtered = historyEvents.filter(e => e.timestamp >= startTime);
+                generateTimelapseFromEvents(filtered, 100);
+            }
+        };
+        
+        window.previewTimelapse = function() {
+            const speed = parseInt(document.getElementById('historySpeed').value);
+            generateTimelapse(speed, true);
+        };
+        
+        window.downloadTimelapse = function() {
+            const speed = parseInt(document.getElementById('historySpeed').value);
+            generateTimelapse(speed, false, true);
+        };
+        
+        async function generateTimelapse(speed, preview = false, download = false) {
+            if (historyEvents.length === 0) {
+                alert('Нет истории для создания видео');
+                return;
+            }
+            
+            const capturer = new CCapture({
+                format: 'webm',
+                framerate: 30,
+                quality: 90,
+                verbose: false
+            });
+            
+            // Создаём временный canvas для рендера
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = SIZE;
+            tempCanvas.height = SIZE;
+            const tempCtx = tempCanvas.getContext('2d');
+            
+            // Начинаем захват
+            capturer.start();
+            
+            // Создаём карту текущих пикселей
+            const pixelMap = {};
+            
+            // Определяем интервал между кадрами (в мс реального времени)
+            const frameInterval = 1000 / 30; // 30 FPS
+            
+            // Рассчитываем временную шкалу
+            const firstTime = historyEvents[0].timestamp;
+            const lastTime = historyEvents[historyEvents.length - 1].timestamp;
+            const totalDuration = lastTime - firstTime;
+            
+            // Количество кадров для ускоренной версии
+            const targetFrames = 300; // примерно 10 секунд видео
+            const timePerFrame = totalDuration / targetFrames / speed;
+            
+            addConsoleOutput(`⏳ Генерация видео... (${historyEvents.length} изменений, ускорение ${speed}x)`);
+            
+            let currentEventIndex = 0;
+            
+            for (let frame = 0; frame < targetFrames; frame++) {
+                const targetTime = firstTime + (frame * timePerFrame * speed);
+                
+                // Применяем все события до targetTime
+                while (currentEventIndex < historyEvents.length && 
+                       historyEvents[currentEventIndex].timestamp <= targetTime) {
+                    const event = historyEvents[currentEventIndex];
+                    pixelMap[`${event.x},${event.y}`] = event.color;
+                    currentEventIndex++;
+                }
+                
+                // Рендерим текущее состояние
+                tempCtx.clearRect(0, 0, SIZE, SIZE);
+                for (let key in pixelMap) {
+                    const [x, y] = key.split(',').map(Number);
+                    tempCtx.fillStyle = pixelMap[key];
+                    tempCtx.fillRect(x, y, 1, 1);
+                }
+                
+                // Добавляем временную метку
+                const date = new Date(targetTime);
+                tempCtx.font = '3px Arial';
+                tempCtx.fillStyle = '#000000';
+                tempCtx.fillText(date.toLocaleTimeString(), 2, 8);
+                
+                // Захватываем кадр
+                capturer.capture(tempCanvas);
+                
+                // Даём браузеру отдохнуть каждые 30 кадров
+                if (frame % 30 === 0) {
+                    await new Promise(r => setTimeout(r, 0));
+                }
+            }
+            
+            // Завершаем захват
+            capturer.stop();
+            
+            if (download) {
+                capturer.save();
+                addConsoleOutput('✅ Видео сохранено');
+            } else if (preview) {
+                // Для предпросмотра открываем в новом окне
+                capturer.save(blob => {
+                    const url = URL.createObjectURL(blob);
+                    window.open(url);
+                });
+            }
+        }
+        
+        async function generateTimelapseFromEvents(events, speed) {
+            if (events.length === 0) {
+                alert('Нет событий за выбранный период');
+                return;
+            }
+            
+            const capturer = new CCapture({
+                format: 'webm',
+                framerate: 30,
+                quality: 90
+            });
+            
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = SIZE;
+            tempCanvas.height = SIZE;
+            const tempCtx = tempCanvas.getContext('2d');
+            
+            capturer.start();
+            
+            const pixelMap = {};
+            const targetFrames = Math.min(300, events.length);
+            
+            for (let i = 0; i < events.length; i++) {
+                const event = events[i];
+                pixelMap[`${event.x},${event.y}`] = event.color;
+                
+                // Рендерим каждый 10-й кадр для ускорения
+                if (i % Math.ceil(events.length / targetFrames) === 0) {
+                    tempCtx.clearRect(0, 0, SIZE, SIZE);
+                    for (let key in pixelMap) {
+                        const [x, y] = key.split(',').map(Number);
+                        tempCtx.fillStyle = pixelMap[key];
+                        tempCtx.fillRect(x, y, 1, 1);
+                    }
+                    capturer.capture(tempCanvas);
+                }
+            }
+            
+            capturer.stop();
+            capturer.save();
+            addConsoleOutput('✅ Видео за период сохранено');
+        }
         
         // ===== ЗАГРУЗКА ЗАПРЕТОВ =====
         const bannedCharsRef = database.ref('bannedChars');
@@ -1077,7 +1340,10 @@
                 
                 database.ref('pixels/' + x + ',' + y).set(currentColor);
                 database.ref('history/' + Date.now()).set({
-                    x, y, color: currentColor, userId: myId, timestamp: now
+                    x, y, 
+                    color: currentColor, 
+                    userId: myId, 
+                    timestamp: Date.now()
                 });
                 
                 startCooldown();
@@ -1107,23 +1373,20 @@
             }, 1000);
         }
         
-        // ===== ИСПРАВЛЕННАЯ КОНСОЛЬ =====
+        // ===== КОНСОЛЬ =====
         document.addEventListener('keydown', function(e) {
-            // Проверяем нажатие на букву "ъ" (русская), "ё" или Backquote
             if (e.key === 'ъ' || e.key === 'Ъ' || e.key === 'ё' || e.key === 'Ё' || e.code === 'Backquote') {
                 e.preventDefault();
                 
                 const panel = document.getElementById('consolePanel');
                 const overlay = document.getElementById('consoleOverlay');
                 
-                // Просто переключаем классы
                 if (panel.classList.contains('visible')) {
                     panel.classList.remove('visible');
                     overlay.classList.remove('visible');
                 } else {
                     panel.classList.add('visible');
                     overlay.classList.add('visible');
-                    // Если консоль открылась, фокусируем input
                     setTimeout(() => {
                         document.getElementById('consoleInput').focus();
                     }, 100);
@@ -1143,6 +1406,7 @@
             const pass = document.getElementById('adminPassword').value;
             if (pass === ADMIN_PASSWORD) {
                 isAdmin = true;
+                document.getElementById('historySection').style.display = 'block';
                 document.getElementById('bannedSection').style.display = 'block';
                 addConsoleOutput('✅ Доступ разрешен. Добро пожаловать, администратор!');
                 document.getElementById('consoleInput').disabled = false;
@@ -1151,6 +1415,7 @@
                 refreshChatWithDeleteButtons();
                 updateBannedCharsList();
                 updateBannedWordsList();
+                updateHistoryStats();
             } else {
                 addConsoleOutput('❌ Неверный пароль');
             }
@@ -1278,7 +1543,23 @@
                 addConsoleOutput('delete x1,y1;x2,y2 - удалить квадрат');
                 addConsoleOutput('delete msg ID - удалить сообщение');
                 addConsoleOutput('messages - показать все ID сообщений');
+                addConsoleOutput('history - статистика истории');
+                addConsoleOutput('export [speed] - экспорт видео');
                 addConsoleOutput('exit - выйти');
+                
+            } else if (command === 'history') {
+                addConsoleOutput(`📊 История: ${historyEvents.length} изменений`);
+                if (historyEvents.length > 0) {
+                    const first = new Date(historyEvents[0].timestamp);
+                    const last = new Date(historyEvents[historyEvents.length-1].timestamp);
+                    addConsoleOutput(`   С: ${first.toLocaleString()}`);
+                    addConsoleOutput(`   По: ${last.toLocaleString()}`);
+                }
+                
+            } else if (command.startsWith('export')) {
+                const parts = command.split(' ');
+                const speed = parts[1] ? parseInt(parts[1]) : 100;
+                generateTimelapse(speed);
                 
             } else if (command === 'messages') {
                 addConsoleOutput('📨 ID сообщений:');
@@ -1288,6 +1569,7 @@
                 
             } else if (command === 'exit') {
                 isAdmin = false;
+                document.getElementById('historySection').style.display = 'none';
                 document.getElementById('bannedSection').style.display = 'none';
                 document.getElementById('consoleInput').disabled = true;
                 document.querySelector('.console-send').disabled = true;
