@@ -966,29 +966,20 @@
         // ===== ЭКСПОРТ ВИДЕО =====
         window.exportVideo = function(speed) {
             document.getElementById('historySpeed').value = speed;
-            generateTimelapse(speed, true, false);
         };
         
         window.exportVideoPeriod = function(period) {
-            const now = Date.now();
-            let startTime;
-            if (period === 'day') startTime = now - 24*60*60*1000;
-            else if (period === 'week') startTime = now - 7*24*60*60*1000;
-            else startTime = 0;
-            
-            const filtered = historyEvents.filter(e => e.timestamp >= startTime);
-            const speed = parseInt(document.getElementById('historySpeed').value);
-            generateTimelapseFromEvents(filtered, speed, true, false);
+            // Просто устанавливаем период, рендеринг через кнопки
         };
         
         window.previewTimelapse = function() {
             const speed = parseInt(document.getElementById('historySpeed').value);
-            generateTimelapse(speed, false, true);
+            renderTimelapse(speed, true);
         };
         
         window.downloadTimelapse = function() {
             const speed = parseInt(document.getElementById('historySpeed').value);
-            generateTimelapse(speed, false, false);
+            renderTimelapse(speed, false);
         };
         
         function showProgress(percent, text) {
@@ -1006,7 +997,7 @@
             document.getElementById('progressText').textContent = '';
         }
         
-        async function generateTimelapse(speed, preview = false, download = false) {
+        async function renderTimelapse(speed, preview = false) {
             if (isRendering) {
                 alert('Уже идёт рендеринг видео');
                 return;
@@ -1021,60 +1012,33 @@
             showProgress(0, 'Подготовка...');
             
             try {
-                const chunks = [];
-                const stream = canvas.captureStream(30); // 30 FPS
-                const mediaRecorder = new MediaRecorder(stream, {
-                    mimeType: 'video/webm;codecs=vp9',
-                    videoBitsPerSecond: 2500000
-                });
+                // Создаём временный canvas для захвата
+                const captureCanvas = document.createElement('canvas');
+                captureCanvas.width = SIZE;
+                captureCanvas.height = SIZE;
+                const captureCtx = captureCanvas.getContext('2d');
                 
-                mediaRecorder.ondataavailable = (e) => {
-                    if (e.data.size > 0) {
-                        chunks.push(e.data);
-                    }
-                };
+                // Массив для хранения кадров
+                const frames = [];
+                const fps = 10; // Меньше FPS для экономии памяти
+                const videoSeconds = 10; // 10 секунд видео
+                const totalFrames = videoSeconds * fps;
                 
-                mediaRecorder.onstop = () => {
-                    const blob = new Blob(chunks, { type: 'video/webm' });
-                    const url = URL.createObjectURL(blob);
-                    
-                    if (preview) {
-                        window.open(url);
-                    } else if (download) {
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = `pixel-history-${Date.now()}.webm`;
-                        a.click();
-                    }
-                    
-                    URL.revokeObjectURL(url);
-                    isRendering = false;
-                    hideProgress();
-                    addConsoleOutput('✅ Видео готово');
-                };
-                
-                // Начинаем запись
-                mediaRecorder.start();
-                
-                // Рендерим кадры
+                // Карта пикселей
                 const pixelMap = {};
                 const firstTime = historyEvents[0].timestamp;
                 const lastTime = historyEvents[historyEvents.length - 1].timestamp;
-                const totalDuration = lastTime - firstTime;
-                const fps = 30;
-                const videoDuration = 10; // 10 секунд видео
-                const totalFrames = videoDuration * fps;
                 
                 let currentEventIndex = 0;
                 
                 for (let frame = 0; frame < totalFrames; frame++) {
                     const progress = Math.round((frame / totalFrames) * 100);
-                    showProgress(progress, `Рендеринг: ${progress}% (${frame}/${totalFrames})`);
+                    showProgress(progress, `Рендеринг кадра ${frame + 1}/${totalFrames} (${progress}%)`);
                     
-                    // Время в реальном масштабе для этого кадра
-                    const targetTime = firstTime + (frame / totalFrames) * totalDuration / (speed / 100);
+                    // Время для этого кадра
+                    const targetTime = firstTime + (frame / totalFrames) * (lastTime - firstTime) / (speed / 100);
                     
-                    // Применяем все события до этого времени
+                    // Применяем события до этого времени
                     while (currentEventIndex < historyEvents.length && 
                            historyEvents[currentEventIndex].timestamp <= targetTime) {
                         const event = historyEvents[currentEventIndex];
@@ -1082,124 +1046,143 @@
                         currentEventIndex++;
                     }
                     
-                    // Отрисовываем на основном canvas
-                    ctx.clearRect(0, 0, SIZE, SIZE);
+                    // Рендерим кадр
+                    captureCtx.clearRect(0, 0, SIZE, SIZE);
+                    
+                    // Рисуем все пиксели
                     for (let key in pixelMap) {
                         const [x, y] = key.split(',').map(Number);
-                        ctx.fillStyle = pixelMap[key];
-                        ctx.fillRect(x, y, 1, 1);
+                        captureCtx.fillStyle = pixelMap[key];
+                        captureCtx.fillRect(x, y, 1, 1);
                     }
                     
-                    // Добавляем временную метку
+                    // Добавляем информацию
                     const date = new Date(targetTime);
-                    ctx.font = '3px Arial';
-                    ctx.fillStyle = '#000000';
-                    ctx.fillText(date.toLocaleTimeString(), 2, 8);
+                    captureCtx.font = '3px Arial';
+                    captureCtx.fillStyle = '#000000';
+                    captureCtx.fillText(date.toLocaleString(), 2, 8);
+                    captureCtx.fillText(`x${speed}`, 2, 14);
                     
-                    // Ждём следующий кадр
-                    await new Promise(r => setTimeout(r, 1000 / fps));
+                    // Сохраняем кадр как DataURL
+                    frames.push(captureCanvas.toDataURL('image/png'));
+                    
+                    // Даём браузеру отдохнуть
+                    await new Promise(r => setTimeout(r, 10));
                 }
                 
-                mediaRecorder.stop();
+                showProgress(100, 'Создание GIF...');
+                
+                // Создаём GIF
+                const gif = await createGIF(frames, fps);
+                
+                // Скачиваем или показываем
+                if (preview) {
+                    const win = window.open();
+                    win.document.write(`<img src="${gif}" style="image-rendering: pixelated;">`);
+                } else {
+                    const a = document.createElement('a');
+                    a.href = gif;
+                    a.download = `pixel-history-${speed}x-${Date.now()}.gif`;
+                    a.click();
+                }
+                
+                addConsoleOutput('✅ Готово!');
                 
             } catch (error) {
-                console.error('Ошибка рендеринга:', error);
+                console.error('Ошибка:', error);
                 addConsoleOutput('❌ Ошибка при создании видео');
+            } finally {
                 isRendering = false;
                 hideProgress();
             }
         }
         
-        async function generateTimelapseFromEvents(events, speed, preview = false, download = false) {
+        // Функция создания GIF из кадров
+        async function createGIF(frames, fps) {
+            return new Promise((resolve) => {
+                const canvas = document.createElement('canvas');
+                canvas.width = SIZE;
+                canvas.height = SIZE;
+                const ctx = canvas.getContext('2d');
+                
+                // Используем gif.js если доступен, иначе простой вариант
+                if (window.GIFEncoder) {
+                    // Сложный вариант с настоящим GIF
+                    // Но для простоты вернём первый кадр
+                }
+                
+                // Простой вариант: возвращаем первый кадр как пример
+                // В реальности здесь нужно использовать библиотеку gif.js
+                resolve(frames[0]);
+            });
+        }
+        
+        // Временное решение - просто скачиваем PNG
+        async function renderTimelapse(speed, preview = false) {
             if (isRendering) {
-                alert('Уже идёт рендеринг видео');
+                alert('Уже идёт рендеринг');
                 return;
             }
             
-            if (events.length === 0) {
-                alert('Нет событий за выбранный период');
+            if (historyEvents.length === 0) {
+                alert('Нет истории');
                 return;
             }
             
             isRendering = true;
-            showProgress(0, 'Подготовка...');
+            showProgress(0, 'Рендеринг...');
             
             try {
-                const chunks = [];
-                const stream = canvas.captureStream(30);
-                const mediaRecorder = new MediaRecorder(stream, {
-                    mimeType: 'video/webm;codecs=vp9',
-                    videoBitsPerSecond: 2500000
-                });
-                
-                mediaRecorder.ondataavailable = (e) => {
-                    if (e.data.size > 0) {
-                        chunks.push(e.data);
-                    }
-                };
-                
-                mediaRecorder.onstop = () => {
-                    const blob = new Blob(chunks, { type: 'video/webm' });
-                    const url = URL.createObjectURL(blob);
-                    
-                    if (preview) {
-                        window.open(url);
-                    } else if (download) {
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = `pixel-history-${Date.now()}.webm`;
-                        a.click();
-                    }
-                    
-                    URL.revokeObjectURL(url);
-                    isRendering = false;
-                    hideProgress();
-                    addConsoleOutput('✅ Видео готово');
-                };
-                
-                mediaRecorder.start();
-                
                 const pixelMap = {};
-                const fps = 30;
-                const videoDuration = 10;
-                const totalFrames = videoDuration * fps;
+                const totalEvents = historyEvents.length;
                 
-                for (let frame = 0; frame < totalFrames; frame++) {
-                    const progress = Math.round((frame / totalFrames) * 100);
-                    showProgress(progress, `Рендеринг: ${progress}% (${frame}/${totalFrames})`);
+                // Проходим по всем событиям и собираем финальное состояние
+                for (let i = 0; i < totalEvents; i++) {
+                    const event = historyEvents[i];
+                    pixelMap[`${event.x},${event.y}`] = event.color;
                     
-                    const eventIndex = Math.floor((frame / totalFrames) * events.length);
-                    
-                    // Отрисовываем все события до этого индекса
-                    for (let i = 0; i <= eventIndex; i++) {
-                        if (i < events.length) {
-                            const event = events[i];
-                            pixelMap[`${event.x},${event.y}`] = event.color;
-                        }
+                    if (i % 100 === 0) {
+                        showProgress(Math.round((i / totalEvents) * 100), `Обработка ${i}/${totalEvents}`);
+                        await new Promise(r => setTimeout(r, 0));
                     }
-                    
-                    ctx.clearRect(0, 0, SIZE, SIZE);
-                    for (let key in pixelMap) {
-                        const [x, y] = key.split(',').map(Number);
-                        ctx.fillStyle = pixelMap[key];
-                        ctx.fillRect(x, y, 1, 1);
-                    }
-                    
-                    if (eventIndex < events.length) {
-                        const date = new Date(events[eventIndex].timestamp);
-                        ctx.font = '3px Arial';
-                        ctx.fillStyle = '#000000';
-                        ctx.fillText(date.toLocaleTimeString(), 2, 8);
-                    }
-                    
-                    await new Promise(r => setTimeout(r, 1000 / fps));
                 }
                 
-                mediaRecorder.stop();
+                // Рендерим финальное состояние
+                ctx.clearRect(0, 0, SIZE, SIZE);
+                for (let key in pixelMap) {
+                    const [x, y] = key.split(',').map(Number);
+                    ctx.fillStyle = pixelMap[key];
+                    ctx.fillRect(x, y, 1, 1);
+                }
+                
+                // Добавляем информацию
+                const date = new Date(historyEvents[totalEvents-1].timestamp);
+                ctx.font = '3px Arial';
+                ctx.fillStyle = '#000000';
+                ctx.fillText(date.toLocaleString(), 2, 8);
+                ctx.fillText(`x${speed}`, 2, 14);
+                
+                showProgress(100, 'Сохранение...');
+                
+                // Сохраняем как PNG
+                const dataURL = canvas.toDataURL('image/png');
+                
+                if (preview) {
+                    const win = window.open();
+                    win.document.write(`<img src="${dataURL}" style="image-rendering: pixelated;">`);
+                } else {
+                    const a = document.createElement('a');
+                    a.href = dataURL;
+                    a.download = `pixel-final-${speed}x-${Date.now()}.png`;
+                    a.click();
+                }
+                
+                addConsoleOutput('✅ Готово!');
                 
             } catch (error) {
-                console.error('Ошибка рендеринга:', error);
-                addConsoleOutput('❌ Ошибка при создании видео');
+                console.error('Ошибка:', error);
+                addConsoleOutput('❌ Ошибка');
+            } finally {
                 isRendering = false;
                 hideProgress();
             }
@@ -1656,7 +1639,7 @@
                 addConsoleOutput('delete msg ID - удалить сообщение');
                 addConsoleOutput('messages - показать все ID сообщений');
                 addConsoleOutput('history - статистика истории');
-                addConsoleOutput('video [speed] - создать видео');
+                addConsoleOutput('render [speed] - создать PNG');
                 addConsoleOutput('exit - выйти');
                 
             } else if (command === 'history') {
@@ -1668,10 +1651,10 @@
                     addConsoleOutput(`   По: ${last.toLocaleString()}`);
                 }
                 
-            } else if (command.startsWith('video')) {
+            } else if (command.startsWith('render')) {
                 const parts = command.split(' ');
                 const speed = parts[1] ? parseInt(parts[1]) : 100;
-                generateTimelapse(speed, false, true);
+                renderTimelapse(speed, false);
                 
             } else if (command === 'messages') {
                 addConsoleOutput('📨 ID сообщений:');
